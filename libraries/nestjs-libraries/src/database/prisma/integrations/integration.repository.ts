@@ -197,7 +197,8 @@ export class IntegrationRepository {
     isBetweenSteps = false,
     refresh?: string,
     timezone?: number,
-    customInstanceDetails?: string
+    customInstanceDetails?: string,
+    appCredentials?: string
   ) {
     const postTimes = timezone
       ? {
@@ -233,6 +234,7 @@ export class IntegrationRepository {
         refreshNeeded: false,
         rootInternalId: internalId.split('_').pop(),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        ...(appCredentials ? { appCredentials } : {}),
         additionalSettings: additionalSettings
           ? JSON.stringify(additionalSettings)
           : '[]',
@@ -242,6 +244,7 @@ export class IntegrationRepository {
           ? { additionalSettings: JSON.stringify(additionalSettings) }
           : {}),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        ...(appCredentials ? { appCredentials } : {}),
         type: type as any,
         ...(!refresh
           ? {
@@ -338,6 +341,16 @@ export class IntegrationRepository {
       where: {
         organizationId: org,
         id,
+      },
+    });
+  }
+
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integration.model.integration.findFirst({
+      where: {
+        organizationId: org,
+        internalId,
+        deletedAt: null,
       },
     });
   }

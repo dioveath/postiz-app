@@ -22,6 +22,7 @@ import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/cl
 import { difference, uniq } from 'lodash';
 import utc from 'dayjs/plugin/utc';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
+import { executeWithProviderCredentials } from '@gitroom/nestjs-libraries/integrations/provider.credentials.helper';
 
 dayjs.extend(utc);
 
@@ -101,7 +102,8 @@ export class IntegrationService {
     isBetweenSteps = false,
     refresh?: string,
     timezone?: number,
-    customInstanceDetails?: string
+    customInstanceDetails?: string,
+    appCredentials?: string
   ) {
     const uploadedPicture = picture
       ? picture?.indexOf('imagedelivery.net') > -1
@@ -125,7 +127,8 @@ export class IntegrationService {
       isBetweenSteps,
       refresh,
       timezone,
-      customInstanceDetails
+      customInstanceDetails,
+      appCredentials
     );
   }
 
@@ -158,16 +161,35 @@ export class IntegrationService {
     return this._integrationRepository.getIntegrationById(org, id);
   }
 
-  async refreshToken(provider: SocialProvider, refresh: string) {
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integrationRepository.getIntegrationByInternalId(org, internalId);
+  }
+
+  async refreshToken(
+    provider: SocialProvider,
+    integration: Integration
+  ): Promise<
+    | false
+    | {
+        refreshToken: string;
+        accessToken: string;
+        expiresIn: number;
+        additionalSettings?: AuthTokenDetails['additionalSettings'];
+      }
+  > {
     try {
-      const { refreshToken, accessToken, expiresIn } =
-        await provider.refreshToken(refresh);
+      const { refreshToken, accessToken, expiresIn, additionalSettings } =
+        await executeWithProviderCredentials(
+          integration.providerIdentifier,
+          { integration },
+          () => provider.refreshToken(integration.refreshToken!)
+        );
 
       if (!refreshToken || !accessToken || !expiresIn) {
         return false;
       }
 
-      return { refreshToken, accessToken, expiresIn };
+      return { refreshToken, accessToken, expiresIn, additionalSettings };
     } catch (e) {
       return false;
     }
@@ -202,7 +224,7 @@ export class IntegrationService {
         integration.providerIdentifier
       );
 
-      const data = await this.refreshToken(provider, integration.refreshToken!);
+      const data = await this.refreshToken(provider, integration);
 
       if (!data) {
         await this.informAboutRefreshError(
@@ -229,7 +251,13 @@ export class IntegrationService {
         integration.providerIdentifier,
         accessToken,
         refreshToken,
-        expiresIn
+        expiresIn,
+        integration.profile || undefined,
+        integration.inBetweenSteps,
+        undefined,
+        undefined,
+        integration.customInstanceDetails || undefined,
+        integration.appCredentials || undefined
       );
     }
   }
@@ -391,25 +419,14 @@ export class IntegrationService {
       dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
       forceRefresh
     ) {
-      const { accessToken, expiresIn, refreshToken, additionalSettings } =
-        await new Promise<AuthTokenDetails>((res) => {
-          return integrationProvider
-            .refreshToken(getIntegration.refreshToken!)
-            .then((r) => res(r))
-            .catch(() => {
-              res({
-                error: '',
-                accessToken: '',
-                id: '',
-                name: '',
-                picture: '',
-                username: '',
-                additionalSettings: undefined,
-              });
-            });
-        });
+      const refreshed = await this.refreshToken(
+        integrationProvider,
+        getIntegration
+      );
 
-      if (accessToken) {
+      if (refreshed) {
+        const { accessToken, expiresIn, refreshToken, additionalSettings } =
+          refreshed;
         await this.createOrUpdateIntegration(
           additionalSettings,
           !!integrationProvider.oneTimeToken,
@@ -421,7 +438,13 @@ export class IntegrationService {
           getIntegration.providerIdentifier,
           accessToken,
           refreshToken,
-          expiresIn
+          expiresIn,
+          getIntegration.profile || undefined,
+          getIntegration.inBetweenSteps,
+          undefined,
+          undefined,
+          getIntegration.customInstanceDetails || undefined,
+          getIntegration.appCredentials || undefined
         );
 
         getIntegration.token = accessToken;
@@ -444,10 +467,15 @@ export class IntegrationService {
 
     if (integrationProvider.analytics) {
       try {
-        const loadAnalytics = await integrationProvider.analytics(
-          getIntegration.internalId,
-          getIntegration.token,
-          +date
+        const loadAnalytics = await executeWithProviderCredentials(
+          getIntegration.providerIdentifier,
+          { integration: getIntegration },
+          () =>
+            integrationProvider.analytics!(
+              getIntegration.internalId,
+              getIntegration.token,
+              +date
+            )
         );
         await ioRedis.set(
           `integration:${org.id}:${integration}:${date}`,
@@ -522,26 +550,12 @@ export class IntegrationService {
       dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
       forceRefresh
     ) {
-      const { accessToken, expiresIn, refreshToken, additionalSettings } =
-        await new Promise<AuthTokenDetails>((res) => {
-          getSocialIntegration
-            .refreshToken(getIntegration.refreshToken!)
-            .then((r) => res(r))
-            .catch(() =>
-              res({
-                accessToken: '',
-                expiresIn: 0,
-                refreshToken: '',
-                id: '',
-                name: '',
-                username: '',
-                picture: '',
-                additionalSettings: undefined,
-              })
-            );
-        });
+      const refreshed = await this.refreshToken(
+        getSocialIntegration,
+        getIntegration
+      );
 
-      if (!accessToken) {
+      if (!refreshed) {
         await this.refreshNeeded(
           getIntegration.organizationId,
           getIntegration.id
@@ -554,6 +568,9 @@ export class IntegrationService {
         return {};
       }
 
+      const { accessToken, expiresIn, refreshToken, additionalSettings } =
+        refreshed;
+
       await this.createOrUpdateIntegration(
         additionalSettings,
         !!getSocialIntegration.oneTimeToken,
@@ -565,7 +582,13 @@ export class IntegrationService {
         getIntegration.providerIdentifier,
         accessToken,
         refreshToken,
-        expiresIn
+        expiresIn,
+        getIntegration.profile || undefined,
+        getIntegration.inBetweenSteps,
+        undefined,
+        undefined,
+        getIntegration.customInstanceDetails || undefined,
+        getIntegration.appCredentials || undefined
       );
 
       getIntegration.token = accessToken;
@@ -576,13 +599,25 @@ export class IntegrationService {
     }
 
     try {
-      // @ts-ignore
-      await getSocialIntegration?.[getAllInternalPlugs.methodName]?.(
-        getIntegration,
-        originalIntegration,
-        data.post,
-        data.information
-      );
+      const handler =
+        // @ts-ignore
+        getSocialIntegration?.[getAllInternalPlugs.methodName]?.bind(
+          getSocialIntegration
+        );
+
+      if (handler) {
+        await executeWithProviderCredentials(
+          getIntegration.providerIdentifier,
+          { integration: getIntegration },
+          () =>
+            handler(
+              getIntegration,
+              originalIntegration,
+              data.post,
+              data.information
+            )
+        );
+      }
     } catch (err) {
       if (err instanceof RefreshToken) {
         return this.processInternalPlug(data, true);

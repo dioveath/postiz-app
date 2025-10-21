@@ -37,6 +37,7 @@ import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { executeWithProviderCredentials } from '@gitroom/nestjs-libraries/integrations/provider.credentials.helper';
 dayjs.extend(utc);
 
 type PostWithConditionals = Post & {
@@ -414,26 +415,12 @@ export class PostsService {
     }
 
     if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
-      const { accessToken, expiresIn, refreshToken, additionalSettings } =
-        await new Promise<AuthTokenDetails>((res) => {
-          getIntegration
-            .refreshToken(integration.refreshToken!)
-            .then((r) => res(r))
-            .catch(() =>
-              res({
-                accessToken: '',
-                expiresIn: 0,
-                refreshToken: '',
-                id: '',
-                name: '',
-                username: '',
-                picture: '',
-                additionalSettings: undefined,
-              })
-            );
-        });
+      const refreshed = await this._integrationService.refreshToken(
+        getIntegration,
+        integration
+      );
 
-      if (!accessToken) {
+      if (!refreshed) {
         await this._integrationService.refreshNeeded(
           integration.organizationId,
           integration.id
@@ -446,6 +433,9 @@ export class PostsService {
         return {};
       }
 
+      const { accessToken, expiresIn, refreshToken, additionalSettings } =
+        refreshed;
+
       await this._integrationService.createOrUpdateIntegration(
         additionalSettings,
         !!getIntegration.oneTimeToken,
@@ -457,7 +447,13 @@ export class PostsService {
         integration.providerIdentifier,
         accessToken,
         refreshToken,
-        expiresIn
+        expiresIn,
+        undefined,
+        integration.inBetweenSteps,
+        undefined,
+        undefined,
+        integration.customInstanceDetails || undefined,
+        integration.appCredentials || undefined
       );
 
       integration.token = accessToken;
@@ -470,29 +466,34 @@ export class PostsService {
     const newPosts = await this.updateTags(integration.organizationId, posts);
 
     try {
-      const publishedPosts = await getIntegration.post(
-        integration.internalId,
-        integration.token,
-        await Promise.all(
-          (newPosts || []).map(async (p) => ({
-            id: p.id,
-            message: stripHtmlValidation(
-              getIntegration.editor,
-              p.content,
-              true,
-              false,
-              !/<\/?[a-z][\s\S]*>/i.test(p.content),
-              getIntegration.mentionFormat
+      const publishedPosts = await executeWithProviderCredentials(
+        integration.providerIdentifier,
+        { integration },
+        async () =>
+          getIntegration.post(
+            integration.internalId,
+            integration.token,
+            await Promise.all(
+              (newPosts || []).map(async (p) => ({
+                id: p.id,
+                message: stripHtmlValidation(
+                  getIntegration.editor,
+                  p.content,
+                  true,
+                  false,
+                  !/<\/?[a-z][\s\S]*>/i.test(p.content),
+                  getIntegration.mentionFormat
+                ),
+                settings: JSON.parse(p.settings || '{}'),
+                media: await this.updateMedia(
+                  p.id,
+                  JSON.parse(p.image || '[]'),
+                  getIntegration?.convertToJPEG || false
+                ),
+              }))
             ),
-            settings: JSON.parse(p.settings || '{}'),
-            media: await this.updateMedia(
-              p.id,
-              JSON.parse(p.image || '[]'),
-              getIntegration?.convertToJPEG || false
-            ),
-          }))
-        ),
-        integration
+            integration
+          )
       );
 
       for (const post of publishedPosts) {

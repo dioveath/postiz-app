@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useEffect, useMemo } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -219,10 +219,9 @@ export const CustomVariables: FC<{
     type: 'text' | 'password';
   }>;
   close?: () => void;
-  identifier: string;
-  gotoUrl(url: string): void;
+  onSubmit: (values: Record<string, string>) => Promise<void> | void;
 }> = (props) => {
-  const { close, gotoUrl, identifier, variables } = props;
+  const { close, onSubmit, variables } = props;
   const modals = useModals();
   const schema = useMemo(() => {
     return object({
@@ -256,16 +255,28 @@ export const CustomVariables: FC<{
       {}
     ),
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const submit = useCallback(
     async (data: FieldValues) => {
-      modals.closeAll();
-      gotoUrl(
-        `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
-          JSON.stringify(data)
-        ).toString('base64')}`
-      );
+      setSubmitError(null);
+      setIsSubmitting(true);
+      try {
+        await onSubmit(data as Record<string, string>);
+        modals.closeAll();
+        close?.();
+      } catch (error) {
+        console.error('Failed to submit provider credentials', error);
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : 'Could not connect. Please try again.';
+        setSubmitError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
     },
-    [variables]
+    [onSubmit, close, modals]
   );
 
   const t = useT();
@@ -286,8 +297,17 @@ export const CustomVariables: FC<{
               />
             </div>
           ))}
+          {submitError && (
+            <p className="text-red-400 text-[14px]">{submitError}</p>
+          )}
           <div>
-            <Button type="submit">{t('connect', 'Connect')}</Button>
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+            >
+              {t('connect', 'Connect')}
+            </Button>
           </div>
         </form>
       </FormProvider>
@@ -307,6 +327,7 @@ export const AddProviderComponent: FC<{
       validation: string;
       type: 'text' | 'password';
     }>;
+    customFieldMode?: 'provider' | 'credentials';
   }>;
   article: Array<{
     identifier: string;
@@ -331,7 +352,8 @@ export const AddProviderComponent: FC<{
           validation: string;
           defaultValue?: string;
           type: 'text' | 'password';
-        }>
+        }>,
+        customFieldMode?: 'provider' | 'credentials'
       ) =>
       async () => {
         const openWeb3 = async () => {
@@ -398,9 +420,36 @@ export const AddProviderComponent: FC<{
             },
             children: (
               <CustomVariables
-                identifier={identifier}
-                gotoUrl={(url: string) => router.push(url)}
                 variables={customFields}
+                onSubmit={async (values) => {
+                  if (customFieldMode === 'credentials') {
+                    const encoded = Buffer.from(
+                      JSON.stringify(values)
+                    ).toString('base64');
+                    const query = new URLSearchParams({
+                      credentials: encoded,
+                    });
+                    const response = await fetch(
+                      `/integrations/social/${identifier}?${query.toString()}`
+                    );
+                    const { url, err } = await response.json();
+                    if (err || !url) {
+                      toaster.show(
+                        'Could not connect to the platform',
+                        'warning'
+                      );
+                      throw new Error('Could not connect');
+                    }
+                    window.location.href = url;
+                    return;
+                  }
+
+                  router.push(
+                    `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
+                      JSON.stringify(values)
+                    ).toString('base64')}`
+                  );
+                }}
               />
             ),
           });
@@ -440,7 +489,8 @@ export const AddProviderComponent: FC<{
                 item.identifier,
                 item.isExternal,
                 item.isWeb3,
-                item.customFields
+                item.customFields,
+                item.customFieldMode
               )}
               {...(!!item.toolTip
                 ? {

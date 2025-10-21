@@ -113,7 +113,8 @@ export const ConnectChannels: FC = () => {
           validation: string;
           defaultValue?: string;
           type: 'text' | 'password';
-        }>
+        }>,
+        customFieldMode?: 'provider' | 'credentials'
       ) =>
       async () => {
         const gotoIntegration = async (externalUrl?: string) => {
@@ -139,12 +140,40 @@ export const ConnectChannels: FC = () => {
         if (customFields) {
           setShowCustom(
             <CustomVariables
-              identifier={identifier}
-              gotoUrl={(url: string) =>
-                window.open(url, 'Social Connect', 'width=700,height=700')
-              }
               variables={customFields}
               close={() => setShowCustom(undefined)}
+              onSubmit={async (values) => {
+                if (customFieldMode === 'credentials') {
+                  const encoded = Buffer.from(
+                    JSON.stringify(values)
+                  ).toString('base64');
+                  const query = new URLSearchParams({
+                    credentials: encoded,
+                  });
+                  const response = await fetch(
+                    `/integrations/social/${identifier}?${query.toString()}`
+                  );
+                  const { url, err } = await response.json();
+                  if (err || !url) {
+                    toaster.show(
+                      'Could not connect to the platform',
+                      'warning'
+                    );
+                    throw new Error('Could not connect');
+                  }
+                  setShowCustom(undefined);
+                  window.open(url, 'Social Connect', 'width=700,height=700');
+                  return;
+                }
+
+                window.open(
+                  `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
+                    JSON.stringify(values)
+                  ).toString('base64')}`,
+                  'Social Connect',
+                  'width=700,height=700'
+                );
+              }}
             />
           );
           return;
@@ -353,7 +382,8 @@ export const ConnectChannels: FC = () => {
                     social.identifier,
                     social.isExternal,
                     social.isWeb3,
-                    social.customFields
+                    social.customFields,
+                    social.customFieldMode
                   )}
                   className="h-[96px] bg-input flex flex-col justify-center items-center gap-[10px] cursor-pointer"
                 >

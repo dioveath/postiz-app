@@ -28,6 +28,7 @@ import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nos
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
 import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/listmonk.provider';
+import { getCredentialFieldsForProvider } from '@gitroom/nestjs-libraries/integrations/provider.credentials.helper';
 
 export const socialIntegrationList: SocialProvider[] = [
   new XProvider(),
@@ -64,15 +65,36 @@ export class IntegrationManager {
   async getAllIntegrations() {
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
-          name: p.name,
-          identifier: p.identifier,
-          toolTip: p.toolTip,
-          editor: p.editor,
-          isExternal: !!p.externalUrl,
-          isWeb3: !!p.isWeb3,
-          ...(p.customFields ? { customFields: await p.customFields() } : {}),
-        }))
+        socialIntegrationList.map(async (p) => {
+          const credentialFields = getCredentialFieldsForProvider(p.identifier);
+          const customFieldMode = p.customFields
+            ? 'provider'
+            : credentialFields.length
+            ? 'credentials'
+            : undefined;
+
+          const customFields = p.customFields
+            ? await p.customFields()
+            : credentialFields.length
+            ? credentialFields.map((field) => ({
+                key: field.envKey,
+                label: field.label,
+                validation: field.required ? '/.+/' : '/.*/',
+                type: field.type,
+              }))
+            : undefined;
+
+          return {
+            name: p.name,
+            identifier: p.identifier,
+            toolTip: p.toolTip,
+            editor: p.editor,
+            isExternal: !!p.externalUrl,
+            isWeb3: !!p.isWeb3,
+            ...(customFields ? { customFields } : {}),
+            ...(customFieldMode ? { customFieldMode } : {}),
+          };
+        })
       ),
       article: [] as any[],
     };

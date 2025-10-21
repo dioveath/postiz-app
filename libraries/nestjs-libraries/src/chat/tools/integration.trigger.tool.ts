@@ -6,6 +6,7 @@ import {
   IntegrationManager,
   socialIntegrationList,
 } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { executeWithProviderCredentials } from '@gitroom/nestjs-libraries/integrations/provider.credentials.helper';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -88,33 +89,36 @@ export class IntegrationTriggerTool implements AgentToolInterface {
         while (true) {
           try {
             // @ts-ignore
-            const load = await integrationProvider[context.methodName](
-              getIntegration.token,
-              context.dataSchema.reduce(
-                (all, current) => ({
-                  ...all,
-                  [current.key]: current.value,
-                }),
-                {}
-              ),
-              getIntegration.internalId,
-              getIntegration
+            const load = await executeWithProviderCredentials(
+              getIntegration.providerIdentifier,
+              { integration: getIntegration },
+              () =>
+                integrationProvider[context.methodName](
+                  getIntegration.token,
+                  context.dataSchema.reduce(
+                    (all, current) => ({
+                      ...all,
+                      [current.key]: current.value,
+                    }),
+                    {}
+                  ),
+                  getIntegration.internalId,
+                  getIntegration
+                )
             );
 
             return { output: load };
           } catch (err) {
             console.log(err);
             if (err instanceof RefreshToken) {
-              const {
-                accessToken,
-                refreshToken,
-                expiresIn,
-                additionalSettings,
-              } = await integrationProvider.refreshToken(
-                getIntegration.refreshToken
+              const refreshed = await this._integrationService.refreshToken(
+                integrationProvider,
+                getIntegration
               );
 
-              if (accessToken) {
+              if (refreshed) {
+                const { accessToken, refreshToken, expiresIn, additionalSettings } =
+                  refreshed;
                 await this._integrationService.createOrUpdateIntegration(
                   additionalSettings,
                   !!integrationProvider.oneTimeToken,
@@ -126,7 +130,13 @@ export class IntegrationTriggerTool implements AgentToolInterface {
                   getIntegration.providerIdentifier,
                   accessToken,
                   refreshToken,
-                  expiresIn
+                  expiresIn,
+                  getIntegration.profile || undefined,
+                  getIntegration.inBetweenSteps,
+                  undefined,
+                  undefined,
+                  getIntegration.customInstanceDetails || undefined,
+                  getIntegration.appCredentials || undefined
                 );
 
                 getIntegration.token = accessToken;

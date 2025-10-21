@@ -38,6 +38,14 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { uniqBy } from 'lodash';
+import {
+  decodeCredentialPayload,
+  executeWithProviderCredentials,
+  getCredentialFieldsForProvider,
+  getIntegrationCredentials,
+  encryptAppCredentials,
+  ProviderCredentialMap,
+} from '@gitroom/nestjs-libraries/integrations/provider.credentials.helper';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -94,6 +102,24 @@ export class IntegrationsController {
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier
           );
+          const credentialFields = getCredentialFieldsForProvider(
+            p.providerIdentifier
+          );
+          const customFieldMode = findIntegration.customFields
+            ? 'provider'
+            : credentialFields.length
+            ? 'credentials'
+            : undefined;
+          const customFields = findIntegration.customFields
+            ? await findIntegration.customFields()
+            : credentialFields.length
+            ? credentialFields.map((field) => ({
+                key: field.envKey,
+                label: field.label,
+                validation: field.required ? '/.+/' : '/.*/',
+                type: field.type,
+              }))
+            : undefined;
           return {
             name: p.name,
             id: p.id,
@@ -104,10 +130,9 @@ export class IntegrationsController {
             identifier: p.providerIdentifier,
             inBetweenSteps: p.inBetweenSteps,
             refreshNeeded: p.refreshNeeded,
-            isCustomFields: !!findIntegration.customFields,
-            ...(findIntegration.customFields
-              ? { customFields: await findIntegration.customFields() }
-              : {}),
+            isCustomFields: !!customFields,
+            ...(customFields ? { customFields } : {}),
+            ...(customFieldMode ? { customFieldMode } : {}),
             display: p.profile,
             type: p.type,
             time: JSON.parse(p.postingTimes),
@@ -193,7 +218,9 @@ export class IntegrationsController {
   async getIntegrationUrl(
     @Param('integration') integration: string,
     @Query('refresh') refresh: string,
-    @Query('externalUrl') externalUrl: string
+    @Query('externalUrl') externalUrl: string,
+    @Query('credentials') credentials: string,
+    @GetOrgFromRequest() org: Organization
   ) {
     if (
       !this._integrationManager
@@ -218,8 +245,23 @@ export class IntegrationsController {
           }
         : undefined;
 
+      const decodedCredentials = decodeCredentialPayload(credentials);
+      const existingIntegration =
+        !decodedCredentials && refresh
+          ? await this._integrationService.getIntegrationByInternalId(
+              org.id,
+              refresh
+            )
+          : null;
+      const resolvedCredentials =
+        decodedCredentials || getIntegrationCredentials(existingIntegration);
+
       const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl(getExternalUrl);
+        await executeWithProviderCredentials(
+          integration,
+          { credentials: resolvedCredentials },
+          () => integrationProvider.generateAuthUrl(getExternalUrl)
+        );
 
       if (refresh) {
         await ioRedis.set(`refresh:${state}`, refresh, 'EX', 300);
@@ -232,6 +274,15 @@ export class IntegrationsController {
         'EX',
         300
       );
+
+      if (resolvedCredentials) {
+        await ioRedis.set(
+          `credentials:${state}`,
+          JSON.stringify(resolvedCredentials),
+          'EX',
+          300
+        );
+      }
 
       return { url };
     } catch (err) {
@@ -328,20 +379,29 @@ export class IntegrationsController {
     if (integrationProvider[body.name]) {
       try {
         // @ts-ignore
-        const load = await integrationProvider[body.name](
-          getIntegration.token,
-          body.data,
-          getIntegration.internalId,
-          getIntegration
+        const load = await executeWithProviderCredentials(
+          getIntegration.providerIdentifier,
+          { integration: getIntegration },
+          () =>
+            integrationProvider[body.name]!(
+              getIntegration.token,
+              body.data,
+              getIntegration.internalId,
+              getIntegration
+            )
         );
 
         return load;
       } catch (err) {
         if (err instanceof RefreshToken) {
-          const { accessToken, refreshToken, expiresIn, additionalSettings } =
-            await integrationProvider.refreshToken(getIntegration.refreshToken);
+          const refreshed = await this._integrationService.refreshToken(
+            integrationProvider,
+            getIntegration
+          );
 
-          if (accessToken) {
+          if (refreshed) {
+            const { accessToken, refreshToken, expiresIn, additionalSettings } =
+              refreshed;
             await this._integrationService.createOrUpdateIntegration(
               additionalSettings,
               !!integrationProvider.oneTimeToken,
@@ -415,10 +475,27 @@ export class IntegrationsController {
       await ioRedis.del(`external:${body.state}`);
     }
 
+    const cachedCredentials = await ioRedis.get(`credentials:${body.state}`);
+    if (cachedCredentials) {
+      await ioRedis.del(`credentials:${body.state}`);
+    }
+
     const refresh = await ioRedis.get(`refresh:${body.state}`);
     if (refresh) {
       await ioRedis.del(`refresh:${body.state}`);
     }
+
+    const existingIntegration = body.refresh
+      ? await this._integrationService.getIntegrationByInternalId(
+          org.id,
+          body.refresh
+        )
+      : null;
+    const storedCredentials = getIntegrationCredentials(existingIntegration);
+    const redisCredentials = cachedCredentials
+      ? (JSON.parse(cachedCredentials) as ProviderCredentialMap)
+      : undefined;
+    const resolvedCredentials = redisCredentials || storedCredentials;
 
     const {
       error,
@@ -432,13 +509,21 @@ export class IntegrationsController {
       additionalSettings,
       // eslint-disable-next-line no-async-promise-executor
     } = await new Promise<AuthTokenDetails>(async (res) => {
-      const auth = await integrationProvider.authenticate(
+      const auth = await executeWithProviderCredentials(
+        integration,
         {
-          code: body.code,
-          codeVerifier: getCodeVerifier,
-          refresh: body.refresh,
+          credentials: resolvedCredentials,
+          integration: existingIntegration || undefined,
         },
-        details ? JSON.parse(details) : undefined
+        () =>
+          integrationProvider.authenticate(
+            {
+              code: body.code,
+              codeVerifier: getCodeVerifier,
+              refresh: body.refresh,
+            },
+            details ? JSON.parse(details) : undefined
+          )
       );
 
       if (typeof auth === 'string') {
@@ -454,10 +539,18 @@ export class IntegrationsController {
       }
 
       if (refresh && integrationProvider.reConnect) {
-        const newAuth = await integrationProvider.reConnect(
-          auth.id,
-          refresh,
-          auth.accessToken
+        const newAuth = await executeWithProviderCredentials(
+          integration,
+          {
+            credentials: resolvedCredentials,
+            integration: existingIntegration || undefined,
+          },
+          () =>
+            integrationProvider.reConnect!(
+              auth.id,
+              refresh,
+              auth.accessToken
+            )
         );
         return res(newAuth);
       }
@@ -499,6 +592,10 @@ export class IntegrationsController {
       throw new HttpException('', 412);
     }
 
+    const encryptedCredentials = resolvedCredentials
+      ? encryptAppCredentials(resolvedCredentials)
+      : undefined;
+
     return this._integrationService.createOrUpdateIntegration(
       additionalSettings,
       !!integrationProvider.oneTimeToken,
@@ -521,7 +618,8 @@ export class IntegrationsController {
         ? AuthService.fixedEncryption(
             Buffer.from(body.code, 'base64').toString()
           )
-        : undefined
+        : undefined,
+      encryptedCredentials
     );
   }
 
