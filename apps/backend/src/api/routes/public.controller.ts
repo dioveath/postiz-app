@@ -30,14 +30,14 @@ const pump = promisify(pipeline);
 @Controller('/public')
 export class PublicController {
   constructor(
-    private _agenciesService: AgenciesService,
-    private _trackService: TrackService,
-    private _agentGraphInsertService: AgentGraphInsertService,
+    // private _agenciesService: AgenciesService,
+    private _trackService: TrackService, // facebook
+    // private _agentGraphInsertService: AgentGraphInsertService,
     private _postsService: PostsService,
-    private _nowpayments: Nowpayments
+    // private _nowpayments: Nowpayments
   ) {}
   @Post('/agent')
-  async createAgent(@Body() body: { text: string; apiKey: string }) {
+  async createAgent(@Body() body: { text: string; apiKey: string }) {    
     if (
       !body.apiKey ||
       !process.env.AGENT_API_KEY ||
@@ -45,27 +45,31 @@ export class PublicController {
     ) {
       return;
     }
-    return this._agentGraphInsertService.newPost(body.text);
+    return
+    // return this._agentGraphInsertService.newPost(body.text);
   }
 
   @Get('/agencies-list')
   async getAgencyByUser() {
-    return this._agenciesService.getAllAgencies();
+    // return this._agenciesService.getAllAgencies();
+    return
   }
 
   @Get('/agencies-list-slug')
   async getAgencySlug() {
-    return this._agenciesService.getAllAgenciesSlug();
+    // return this._agenciesService.getAllAgenciesSlug();
+    return
   }
 
   @Get('/agencies-information/:agency')
   async getAgencyInformation(@Param('agency') agency: string) {
-    return this._agenciesService.getAgencyInformation(agency);
+    // return this._agenciesService.getAgencyInformation(agency);
+    return 
   }
 
   @Get('/agencies-list-count')
   async getAgenciesCount() {
-    return this._agenciesService.getCount();
+    // return this._agenciesService.getCount();
   }
 
   @Get(`/posts/:id`)
@@ -148,7 +152,8 @@ export class PublicController {
   @Post('/crypto/:path')
   async cryptoPost(@Body() body: any, @Param('path') path: string) {
     console.log('cryptoPost', body, path);
-    return this._nowpayments.processPayment(path, body);
+    return
+    // return this._nowpayments.processPayment(path, body);
   }
 
   @Get('/stream')

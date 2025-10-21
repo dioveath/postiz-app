@@ -31,10 +31,10 @@ import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/p
 export class PostsController {
   constructor(
     private _postsService: PostsService,
-    private _starsService: StarsService,
+    // private _starsService: StarsService,
     private _messagesService: MessagesService,
-    private _agentGraphService: AgentGraphService,
-    private _shortLinkService: ShortLinkService
+    // private _agentGraphService: AgentGraphService,
+    // private _shortLinkService: ShortLinkService
   ) {}
 
   @Get('/:id/statistics')
@@ -47,7 +47,8 @@ export class PostsController {
 
   @Post('/should-shortlink')
   async shouldShortlink(@Body() body: { messages: string[] }) {
-    return { ask: this._shortLinkService.askShortLinkedin(body.messages) };
+    // return { ask: this._shortLinkService.askShortLinkedin(body.messages) };
+    return;
   }
 
   @Get('/marketplace/:id')
@@ -117,7 +118,8 @@ export class PostsController {
 
   @Get('/predict-trending')
   predictTrending() {
-    return this._starsService.predictTrending();
+    return
+    // return this._starsService.predictTrending();
   }
 
   @Get('/old')
@@ -161,9 +163,9 @@ export class PostsController {
     @Res({ passthrough: false }) res: Response
   ) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    for await (const event of this._agentGraphService.start(org.id, body)) {
-      res.write(JSON.stringify(event) + '\n');
-    }
+    // for await (const event of this._agentGraphService.start(org.id, body)) {
+    //   res.write(JSON.stringify(event) + '\n');
+    // }
 
     res.end();
   }

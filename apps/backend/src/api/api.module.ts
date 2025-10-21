@@ -3,8 +3,8 @@ import { AuthController } from '@gitroom/backend/api/routes/auth.controller';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { UsersController } from '@gitroom/backend/api/routes/users.controller';
 import { AuthMiddleware } from '@gitroom/backend/services/auth/auth.middleware';
-import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
-import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+// import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
+// import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { AnalyticsController } from '@gitroom/backend/api/routes/analytics.controller';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
 import { PermissionsService } from '@gitroom/backend/services/auth/permissions/permissions.service';
@@ -14,20 +14,20 @@ import { SettingsController } from '@gitroom/backend/api/routes/settings.control
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
-import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
+// import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
-import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
+// import { MarketplaceController } from '@gitroom/backend/api/routes/marketplace.controller';
 import { MessagesController } from '@gitroom/backend/api/routes/messages.controller';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
-import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
-import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
-import { CopilotController } from '@gitroom/backend/api/routes/copilot.controller';
-import { AgenciesController } from '@gitroom/backend/api/routes/agencies.controller';
+// import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+// import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
+// import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
+// import { CopilotController } from '@gitroom/backend/api/routes/copilot.controller';
+// import { AgenciesController } from '@gitroom/backend/api/routes/agencies.controller';
 import { PublicController } from '@gitroom/backend/api/routes/public.controller';
 import { RootController } from '@gitroom/backend/api/routes/root.controller';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
-import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
-import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
+// import { ShortLinkService } from '@gitroom/nestjs-libraries/short-linking/short.link.service';
+// import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { WebhookController } from '@gitroom/backend/api/routes/webhooks.controller';
 import { SignatureController } from '@gitroom/backend/api/routes/signature.controller';
 import { AutopostController } from '@gitroom/backend/api/routes/autopost.controller';
@@ -42,23 +42,23 @@ const authenticatedController = [
   SettingsController,
   PostsController,
   MediaController,
-  BillingController,
+  // BillingController,
   NotificationsController,
-  MarketplaceController,
+  // MarketplaceController,
   MessagesController,
-  CopilotController,
-  AgenciesController,
+  // CopilotController,
+  // AgenciesController,
   WebhookController,
   SignatureController,
   AutopostController,
   SetsController,
-  ThirdPartyController,
+  // ThirdPartyController,
 ];
 @Module({
   imports: [UploadModule],
   controllers: [
     RootController,
-    StripeController,
+    // StripeController,
     AuthController,
     PublicController,
     MonitorController,
@@ -66,17 +66,17 @@ const authenticatedController = [
   ],
   providers: [
     AuthService,
-    StripeService,
-    OpenaiService,
-    ExtractContentService,
+    // StripeService,
+    // OpenaiService,
+    // ExtractContentService,
     AuthMiddleware,
     PoliciesGuard,
     PermissionsService,
-    CodesService,
+    // CodesService,
     IntegrationManager,
     TrackService,
-    ShortLinkService,
-    Nowpayments,
+    // ShortLinkService,
+    // Nowpayments,
   ],
   get exports() {
     return [...this.imports, ...this.providers];

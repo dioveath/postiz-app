@@ -1,5 +1,5 @@
-import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-initializeSentry('backend', true);
+// import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
+// initializeSentry('backend', true);
 
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
 import { json } from 'express';
@@ -11,17 +11,22 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
-import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
+// import { SubscriptionExceptionFilter } from '@gitroom/backend/services/auth/permissions/subscription.exception';
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
-import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
+// import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 
 async function bootstrap() {
+  Logger.log("SECURED:" + process.env.NOT_SECURED)
+  Logger.log("FRONTEND_URL:" + process.env.FRONTEND_URL)
+  Logger.log("MAIN_URL:" + process.env.MAIN_URL)
+
+
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-copilotkit-runtime-client-gql-version'],
+      allowedHeaders: ['Content-Type', 'Authorzation', 'x-copilotkit-runtime-client-gql-version'],
       exposedHeaders: [
         'reload',
         'onboarding',
@@ -37,7 +42,7 @@ async function bootstrap() {
     },
   });
 
-  await startMcp(app);
+  // await startMcp(app);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -45,12 +50,12 @@ async function bootstrap() {
     })
   );
 
-  app.use('/copilot', (req: any, res: any, next: any) => {
-    json({ limit: '50mb' })(req, res, next);
-  });
+  // app.use('/copilot', (req: any, res: any, next: any) => {
+  //   json({ limit: '50mb' })(req, res, next);
+  // });
 
   app.use(cookieParser());
-  app.useGlobalFilters(new SubscriptionExceptionFilter());
+  // app.useGlobalFilters(new SubscriptionExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());
 
   loadSwagger(app);

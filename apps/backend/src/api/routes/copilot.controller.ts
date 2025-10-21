@@ -30,7 +30,7 @@ export type ChannelsContext = {
   ui: string;
 };
 
-@Controller('/copilot')
+// @Controller('/copilot')
 export class CopilotController {
   constructor(
     private _subscriptionService: SubscriptionService,

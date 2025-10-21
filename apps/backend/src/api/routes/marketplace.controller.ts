@@ -15,8 +15,8 @@ import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marke
 import { CreateOfferDto } from '@gitroom/nestjs-libraries/dtos/marketplace/create.offer.dto';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 
-@ApiTags('Marketplace')
-@Controller('/marketplace')
+// @ApiTags('Marketplace')
+// @Controller('/marketplace')
 export class MarketplaceController {
   constructor(
     private _itemUserService: ItemUserService,

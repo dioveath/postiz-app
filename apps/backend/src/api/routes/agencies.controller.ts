@@ -5,8 +5,8 @@ import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agenc
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { CreateAgencyDto } from '@gitroom/nestjs-libraries/dtos/agencies/create.agency.dto';
 
-@ApiTags('Agencies')
-@Controller('/agencies')
+// @ApiTags('Agencies')
+// @Controller('/agencies')
 export class AgenciesController {
   constructor(private _agenciesService: AgenciesService) {}
   @Get('/')

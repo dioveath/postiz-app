@@ -12,8 +12,8 @@ import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service
 import { ApiTags } from '@nestjs/swagger';
 import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
 
-@ApiTags('Stripe')
-@Controller('/stripe')
+// @ApiTags('Stripe')
+// @Controller('/stripe')
 export class StripeController {
   constructor(
     private readonly _stripeService: StripeService,

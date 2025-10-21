@@ -10,8 +10,8 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { Request } from 'express';
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 
-@ApiTags('Billing')
-@Controller('/billing')
+// @ApiTags('Billing')
+// @Controller('/billing')
 export class BillingController {
   constructor(
     private _subscriptionService: SubscriptionService,
