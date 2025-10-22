@@ -1,9 +1,11 @@
 import { Integration } from '@prisma/client';
 
 export interface ClientInformation {
-  client_id: string;
-  client_secret: string;
-  instanceUrl: string;
+  client_id?: string;
+  client_secret?: string;
+  instanceUrl?: string;
+  oauthAppId?: string;
+  [key: string]: string | undefined;
 }
 export interface IAuthenticator {
   authenticate(
