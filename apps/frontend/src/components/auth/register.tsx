@@ -14,7 +14,7 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import clsx from 'clsx';
 import { GoogleProvider } from '@gitroom/frontend/components/auth/providers/google.provider';
 import { OauthProvider } from '@gitroom/frontend/components/auth/providers/oauth.provider';
-import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+// import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
@@ -92,7 +92,7 @@ export function RegisterAfter({
     useVariables();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const fireEvents = useFireEvents();
+  // const fireEvents = useFireEvents();
   const track = useTrack();
   const isAfterProvider = useMemo(() => {
     return !!token && !!provider;
@@ -119,7 +119,7 @@ export function RegisterAfter({
       .then(async (response) => {
         setLoading(false);
         if (response.status === 200) {
-          fireEvents('register');
+          // fireEvents('register');
           return track(TrackEnum.CompleteRegistration).then(() => {
             if (response.headers.get('activate') === 'true') {
               router.push('/auth/activate');

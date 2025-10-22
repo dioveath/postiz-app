@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Integration } from '@prisma/client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
+// import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
 import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
@@ -347,11 +347,12 @@ export const MenuComponent: FC<
 export const LaunchesComponent = () => {
   const fetch = useFetch();
   const user = useUser();
-  const { billingEnabled } = useVariables();
+  console.log(user)
+  // const { billingEnabled } = useVariables();
   const router = useRouter();
   const search = useSearchParams();
   const toast = useToaster();
-  const fireEvents = useFireEvents();
+  // const fireEvents = useFireEvents();
   const t = useT();
   const [reload, setReload] = useState(false);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
@@ -466,7 +467,7 @@ export const LaunchesComponent = () => {
       );
     }
     if (search.get('added')) {
-      fireEvents('channel_added');
+      // fireEvents('channel_added');
       window?.opener?.postMessage(
         {
           msg: 'Channel added',
@@ -524,12 +525,11 @@ export const LaunchesComponent = () => {
           </div>
           <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
             <AddProviderButton update={() => update(true)} />
-            <div className="flex gap-[8px] group-[.sidebar]:flex-col">
+            {/* <div className="flex gap-[8px] group-[.sidebar]:flex-col">
               {sortedIntegrations?.length > 0 && <NewPost />}
               {sortedIntegrations?.length > 0 &&
-                user?.tier?.ai &&
-                billingEnabled && <GeneratorComponent />}
-            </div>
+                user?.tier?.ai && <GeneratorComponent />}
+            </div> */}
           </div>
           <div className="gap-[32px] flex flex-col select-none flex-1">
             {sortedIntegrations.length === 0 && collapseMenu === '0' && (

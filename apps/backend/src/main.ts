@@ -17,7 +17,7 @@ import { ConfigurationChecker } from '@gitroom/helpers/configuration/configurati
 // import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 
 async function bootstrap() {
-  Logger.log("SECURED:" + process.env.NOT_SECURED)
+  Logger.log("NOT_SECURED:" + process.env.NOT_SECURED)
   Logger.log("FRONTEND_URL:" + process.env.FRONTEND_URL)
   Logger.log("MAIN_URL:" + process.env.MAIN_URL)
 
@@ -26,7 +26,7 @@ async function bootstrap() {
     rawBody: true,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
-      allowedHeaders: ['Content-Type', 'Authorzation', 'x-copilotkit-runtime-client-gql-version'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-copilotkit-runtime-client-gql-version', 'auth'],
       exposedHeaders: [
         'reload',
         'onboarding',
@@ -36,6 +36,7 @@ async function bootstrap() {
       ],
       origin: [
         process.env.FRONTEND_URL,
+        'http://192.168.1.87:4200',
         'http://localhost:6274',
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
       ],

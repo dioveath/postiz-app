@@ -2,7 +2,7 @@
 
 import React, { ReactNode, useCallback } from 'react';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Kumbh_Sans } from 'next/font/google';
 const ModeComponent = dynamic(
   () => import('@gitroom/frontend/components/layout/mode.component'),
   {
@@ -16,33 +16,33 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
-import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
+// import { CheckPayment } from '@gitroom/frontend/components/layout/check.payment';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
 import { ShowMediaBoxModal } from '@gitroom/frontend/components/media/media.component';
 import { ShowLinkedinCompany } from '@gitroom/frontend/components/launches/helpers/linkedin.component';
 import { MediaSettingsLayout } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { Toaster } from '@gitroom/react/toaster/toaster';
 import { ShowPostSelector } from '@gitroom/frontend/components/post-url-selector/post.url.selector';
-import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
-import { Support } from '@gitroom/frontend/components/layout/support';
-import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
+// import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
+// import { Support } from '@gitroom/frontend/components/layout/support';
+// import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
 import { ContextWrapper } from '@gitroom/frontend/components/layout/user.context';
-import { CopilotKit } from '@copilotkit/react-core';
+// import { CopilotKit } from '@copilotkit/react-core';
 import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import { Title } from '@gitroom/frontend/components/layout/title';
 import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
-import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
+// import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
-import { BillingAfter } from '@gitroom/frontend/components/new-layout/billing.after';
-import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
+// import { BillingAfter } from '@gitroom/frontend/components/new-layout/billing.after';
+// import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
 import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-condition.component';
  import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 
-const jakartaSans = Plus_Jakarta_Sans({
+const kumbhSans = Kumbh_Sans({
   weight: ['600', '500'],
-  style: ['normal', 'italic'],
+  style: ['normal'],
   subsets: ['latin'],
 });
 
@@ -68,34 +68,37 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   return (
     <ContextWrapper user={user}>
-      <CopilotKit
+      {/* <CopilotKit
         credentials="include"
         runtimeUrl={backendUrl + '/copilot/chat'}
         showDevConsole={false}
-      >
+      > */}
         <MantineWrapper>
-          {user.tier === 'FREE' && searchParams.get('check') && (
+          {/* {user.tier === 'FREE' && searchParams.get('check') && (
             <CheckPayment check={searchParams.get('check')!} mutate={mutate} />
-          )}
+          )} */}
           <ToolTip />
           <ShowMediaBoxModal />
           <ShowLinkedinCompany />
           <MediaSettingsLayout />
-          <Toaster />
-          <ShowPostSelector />
-          <PreConditionComponent />
-          <NewSubscription />
-          <Support />
-          <ContinueProvider />
+          {/* <Toaster /> */}
+          {/* <ShowPostSelector /> */}
+          {/* <PreConditionComponent /> */}
+          {/* <NewSubscription /> */}
+          {/* <Support /> */}
+          {/* <ContinueProvider /> */}
           <div
             className={clsx(
               'flex flex-col min-h-screen min-w-screen text-newTextColor p-[12px]',
-              jakartaSans.className
+              kumbhSans.className
             )}
           >
             <div>{user?.admin ? <Impersonate /> : <div />}</div>
             {user.tier === 'FREE' && isGeneral && billingEnabled ? (
-              <BillingAfter />
+              // <BillingAfter />
+              <>
+              BILLING AFTER????
+              </>
             ) : (
               <div className="flex-1 flex gap-[8px]">
                 <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
@@ -112,13 +115,13 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <Title />
                     </div>
                     <div className="flex gap-[20px] text-textItemBlur">
-                      <OrganizationSelector />
+                      {/* <OrganizationSelector /> */}
                       <div className="hover:text-newTextColor">
                         <ModeComponent />
                       </div>
                       <div className="w-[1px] h-[20px] bg-blockSeparator" />
                       <LanguageComponent />
-                      <ChromeExtensionComponent />
+                      {/* <ChromeExtensionComponent /> */}
                       <div className="w-[1px] h-[20px] bg-blockSeparator" />
                       <AttachToFeedbackIcon />
                       <NotificationComponent />
@@ -130,7 +133,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             )}
           </div>
         </MantineWrapper>
-      </CopilotKit>
+      {/* </CopilotKit> */}
     </ContextWrapper>
   );
 };

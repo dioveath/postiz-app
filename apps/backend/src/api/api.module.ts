@@ -52,7 +52,7 @@ const authenticatedController = [
   SignatureController,
   AutopostController,
   SetsController,
-  // ThirdPartyController,
+  ThirdPartyController,
 ];
 @Module({
   imports: [UploadModule],

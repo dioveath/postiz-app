@@ -23,6 +23,7 @@ export const useAddProvider = (update?: () => void) => {
   const fetch = useFetch();
   return useCallback(async () => {
     const data = await (await fetch('/integrations')).json();
+    console.log(data)
     modal.openModal({
       title: 'Add Channel',
       withCloseButton: true,

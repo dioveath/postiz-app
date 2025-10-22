@@ -10,5 +10,6 @@ export const metadata: Metadata = {
   description: '',
 };
 export default async function Index() {
-  return <ThirdPartyComponent />;
+  // return <ThirdPartyComponent />;
+  return <>NOT NEEDED!</>
 }

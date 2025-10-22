@@ -1,19 +1,19 @@
-import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.component';
+// import { SentryComponent } from '@gitroom/frontend/components/layout/sentry.component';
 
 export const dynamic = 'force-dynamic';
 import '../global.scss';
 import 'react-tooltip/dist/react-tooltip.css';
-import '@copilotkit/react-ui/styles.css';
+// import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
 import { ReactNode } from 'react';
 import { Plus_Jakarta_Sans } from 'next/font/google';
-import PlausibleProvider from 'next-plausible';
+// import PlausibleProvider from 'next-plausible';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
-import { Fragment } from 'react';
-import { PHProvider } from '@gitroom/react/helpers/posthog';
+// import { Fragment } from 'react';
+// import { PHProvider } from '@gitroom/react/helpers/posthog';
 import UtmSaver from '@gitroom/helpers/utils/utm.saver';
-import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
+// import { ToltScript } from '@gitroom/frontend/components/layout/tolt.script';
 import { FacebookComponent } from '@gitroom/frontend/components/layout/facebook.component';
 import { headers } from 'next/headers';
 import { headerName } from '@gitroom/react/translation/i18n.config';
@@ -34,9 +34,9 @@ const jakartaSans = Plus_Jakarta_Sans({
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const allHeaders = headers();
-  const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
-    ? PlausibleProvider
-    : Fragment;
+  // const Plausible = !!process.env.STRIPE_PUBLISHABLE_KEY
+  //   ? PlausibleProvider
+  //   : Fragment;
   return (
     <html>
       <head>
@@ -78,25 +78,25 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               : []
           }
         >
-          <SentryComponent>
+          {/* <SentryComponent> */}
             {/*<SetTimezone />*/}
             <HtmlComponent />
-            <ToltScript />
+            {/* <ToltScript /> */}
             <FacebookComponent />
-            <Plausible
+            {/* <Plausible
               domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
-            >
-              <PHProvider
+            > */}
+              {/* <PHProvider
                 phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}
                 host={process.env.NEXT_PUBLIC_POSTHOG_HOST}
-              >
+              > */}
                 <LayoutContext>
                   <UtmSaver />
                   {children}
                 </LayoutContext>
-              </PHProvider>
-            </Plausible>
-          </SentryComponent>
+              {/* </PHProvider> */}
+            {/* </Plausible> */}
+          {/* </SentryComponent> */}
         </VariableContextComponent>
       </body>
     </html>

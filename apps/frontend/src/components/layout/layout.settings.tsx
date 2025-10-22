@@ -24,7 +24,7 @@ import { SettingsComponent } from '@gitroom/frontend/components/layout/settings.
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
 import { Support } from '@gitroom/frontend/components/layout/support';
 import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.provider';
-import { CopilotKit } from '@copilotkit/react-core';
+// import { CopilotKit } from '@copilotkit/react-core';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import clsx from 'clsx';
 import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
@@ -69,11 +69,11 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
   if (!user) return null;
   return (
     <ContextWrapper user={user}>
-      <CopilotKit
+      {/* <CopilotKit
         credentials="include"
         runtimeUrl={backendUrl + '/copilot/chat'}
         showDevConsole={false}
-      >
+      > */}
         <MantineWrapper>
           {user.tier === 'FREE' && searchParams.get('check') && (
             <CheckPayment check={searchParams.get('check')!} mutate={mutate} />
@@ -250,7 +250,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
         </MantineWrapper>
-      </CopilotKit>
+      {/* </CopilotKit> */}
     </ContextWrapper>
   );
 };

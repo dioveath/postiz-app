@@ -8,7 +8,7 @@ import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
 // import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
-// import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.module';
+import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.module';
 // import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 // import { SentryModule } from '@sentry/nestjs/setup';
 // import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
@@ -23,7 +23,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ApiModule,
     PublicApiModule,
     // AgentModule,
-    // ThirdPartyModule,
+    ThirdPartyModule,
     // VideoModule,
     // ChatModule,
     ThrottlerModule.forRoot([

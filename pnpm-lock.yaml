@@ -11,7 +11,7 @@ importers:
     dependencies:
       '@ag-ui/mastra':
         specifier: 0.2.0
-        version: 0.2.0(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.37)(@copilotkit/runtime@1.10.6(ad69a584ac422af66ddf750b8addc6ce))(@mastra/core@0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76))(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
+        version: 0.2.0(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.39)(@copilotkit/runtime@1.10.6(d9026dea65dfbe86452ac7682c3cb62f))(@mastra/core@0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76))(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
       '@ai-sdk/openai':
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
@@ -38,7 +38,7 @@ importers:
         version: 1.10.6(@types/react@18.3.1)(graphql@16.11.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@copilotkit/runtime':
         specifier: 1.10.6
-        version: 1.10.6(ad69a584ac422af66ddf750b8addc6ce)
+        version: 1.10.6(d9026dea65dfbe86452ac7682c3cb62f)
       '@hookform/resolvers':
         specifier: ^3.3.4
         version: 3.10.0(react-hook-form@7.65.0(react@18.3.1))
@@ -435,9 +435,6 @@ importers:
       polotno:
         specifier: ^2.10.5
         version: 2.29.4(@types/react@18.3.1)(@types/sortablejs@1.15.8)(react-dom@18.3.1(react@18.3.1))(react-native@0.82.1(@babel/core@7.28.4)(@types/react@18.3.1)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)
-      posthog-js:
-        specifier: ^1.178.0
-        version: 1.279.0
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -4738,9 +4735,6 @@ packages:
 
   '@popperjs/core@2.11.8':
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
-
-  '@posthog/core@1.3.0':
-    resolution: {integrity: sha512-hxLL8kZNHH098geedcxCz8y6xojkNYbmJEW+1vFXsmPcExyCXIUUJ/34X6xa9GcprKxd0Wsx3vfJQLQX4iVPhw==}
 
   '@postiz/wallets@0.0.1':
     resolution: {integrity: sha512-zCkg5ZXHZkyCREvoAtxQAp5IoCYfSQs9xonzyMvV/LoY32KjudV5wc4rb4R7NYNdPTGfcni1R8ETojASnK6oUw==}
@@ -9165,9 +9159,6 @@ packages:
     resolution: {integrity: sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==}
     deprecated: core-js@<3.23.3 is no longer maintained and not recommended for usage due to the number of issues. Because of the V8 engine whims, feature detection in old core-js versions could cause a slowdown up to 100x even if nothing is polyfilled. Some versions have web compatibility issues. Please, upgrade your dependencies to the actual version of core-js.
 
-  core-js@3.46.0:
-    resolution: {integrity: sha512-vDMm9B0xnqqZ8uSBpZ8sNtRtOdmfShrvT6h2TuQGLs0Is+cR0DYbj/KWP6ALVNbWPpqA/qPLoOuppJN07humpA==}
-
   core-util-is@1.0.2:
     resolution: {integrity: sha512-3lqz5YjWTYnW6dlDa5TLaTCcShfar1e40rmcJVwCBJC6mWlFuj0eCHIElmG1g5kyuJ/GD+8Wn4FFCcz4gJPfaQ==}
 
@@ -10242,9 +10233,6 @@ packages:
   fetch-blob@3.2.0:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
     engines: {node: ^12.20 || >= 14.13}
-
-  fflate@0.4.8:
-    resolution: {integrity: sha512-FJqqoDBR00Mdj9ppamLa/Y7vxm+PRmNWA67N846RvsoYVMKB4q3y/de5PA7gUmRMYK/8CMz2GDZQmCRN1wBcWA==}
 
   fflate@0.8.2:
     resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
@@ -13741,9 +13729,6 @@ packages:
     resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
     engines: {node: '>=12'}
 
-  posthog-js@1.279.0:
-    resolution: {integrity: sha512-k1Efjlr3+/u0RZ681HJCuCNji4ejac/JVf9lb/dnYpdzwfqGjltrui7pqni9IMUQb+mOYtb1+IVQo12YvU5Afw==}
-
   posthog-node@4.18.0:
     resolution: {integrity: sha512-XROs1h+DNatgKh/AlIlCtDxWzwrKdYDb2mOs58n4yN8BkGN9ewqeQwG5ApS4/IzwCb7HPttUkOVulkYatd2PIw==}
     engines: {node: '>=15.0.0'}
@@ -16365,9 +16350,6 @@ packages:
     resolution: {integrity: sha512-QW95TCTaHmsYfHDybGMwO5IJIM93I/6vTRk+daHTWFPhwh+C8Cg7j7XyKrwrj8Ib6vYXe0ocYNrmzY4xAAN6ug==}
     engines: {node: '>= 14'}
 
-  web-vitals@4.2.4:
-    resolution: {integrity: sha512-r4DIlprAGwJ7YM11VZp4R884m0Vmgr6EAKe3P+kO0PPj3Unqyvv59rczf6UiGcb9Z8QxZVcqKNwv/g0WNdWwsw==}
-
   webextension-polyfill@0.12.0:
     resolution: {integrity: sha512-97TBmpoWJEE+3nFBQ4VocyCdLKfw54rFaJ6EVQYLBCXqCIpLSZkwGgASpv4oPt9gdKCJ80RJlcmNzNn008Ag6Q==}
 
@@ -16756,10 +16738,10 @@ snapshots:
       '@ag-ui/core': 0.0.39
       '@ag-ui/proto': 0.0.39
 
-  '@ag-ui/langgraph@0.0.18(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.37)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.6.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@ag-ui/langgraph@0.0.18(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.39)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.6.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@ag-ui/client': 0.0.40
-      '@ag-ui/core': 0.0.37
+      '@ag-ui/core': 0.0.39
       '@langchain/core': 0.3.78(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.6.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))
       '@langchain/langgraph-sdk': 0.1.10(@langchain/core@0.3.78(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.6.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       partial-json: 0.1.7
@@ -16772,12 +16754,12 @@ snapshots:
       - react
       - react-dom
 
-  '@ag-ui/mastra@0.2.0(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.37)(@copilotkit/runtime@1.10.6(ad69a584ac422af66ddf750b8addc6ce))(@mastra/core@0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76))(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)':
+  '@ag-ui/mastra@0.2.0(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.39)(@copilotkit/runtime@1.10.6(d9026dea65dfbe86452ac7682c3cb62f))(@mastra/core@0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76))(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)':
     dependencies:
       '@ag-ui/client': 0.0.40
-      '@ag-ui/core': 0.0.37
+      '@ag-ui/core': 0.0.39
       '@ai-sdk/ui-utils': 1.2.11(zod@3.25.76)
-      '@copilotkit/runtime': 1.10.6(ad69a584ac422af66ddf750b8addc6ce)
+      '@copilotkit/runtime': 1.10.6(d9026dea65dfbe86452ac7682c3cb62f)
       '@mastra/client-js': 0.15.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
       '@mastra/core': 0.20.2(effect@3.16.12)(openapi-types@12.1.3)(react@18.3.1)(zod@3.25.76)
       rxjs: 7.8.1
@@ -18722,12 +18704,12 @@ snapshots:
       - encoding
       - graphql
 
-  '@copilotkit/runtime@1.10.6(ad69a584ac422af66ddf750b8addc6ce)':
+  '@copilotkit/runtime@1.10.6(d9026dea65dfbe86452ac7682c3cb62f)':
     dependencies:
       '@ag-ui/client': 0.0.40
-      '@ag-ui/core': 0.0.37
+      '@ag-ui/core': 0.0.39
       '@ag-ui/encoder': 0.0.39
-      '@ag-ui/langgraph': 0.0.18(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.37)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.6.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@ag-ui/langgraph': 0.0.18(@ag-ui/client@0.0.40)(@ag-ui/core@0.0.39)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.6.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@ag-ui/proto': 0.0.39
       '@anthropic-ai/sdk': 0.57.0
       '@copilotkit/shared': 1.10.6
@@ -22073,8 +22055,6 @@ snapshots:
   '@polka/url@1.0.0-next.29': {}
 
   '@popperjs/core@2.11.8': {}
-
-  '@posthog/core@1.3.0': {}
 
   '@postiz/wallets@0.0.1(@babel/runtime@7.28.4)(@react-native-async-storage/async-storage@1.24.0(react-native@0.82.1(@babel/core@7.28.4)(@types/react@18.3.1)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@5.0.10)))(@solana/web3.js@1.98.4(bufferutil@4.0.9)(typescript@5.5.4)(utf-8-validate@5.0.10))(@types/react@18.3.1)(@upstash/redis@1.35.6)(bs58@6.0.0)(bufferutil@4.0.9)(ioredis@5.8.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
@@ -28056,8 +28036,6 @@ snapshots:
 
   core-js@2.6.12: {}
 
-  core-js@3.46.0: {}
-
   core-util-is@1.0.2: {}
 
   core-util-is@1.0.3: {}
@@ -29428,8 +29406,6 @@ snapshots:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
-
-  fflate@0.4.8: {}
 
   fflate@0.8.2: {}
 
@@ -34009,14 +33985,6 @@ snapshots:
 
   postgres@3.4.7: {}
 
-  posthog-js@1.279.0:
-    dependencies:
-      '@posthog/core': 1.3.0
-      core-js: 3.46.0
-      fflate: 0.4.8
-      preact: 10.27.2
-      web-vitals: 4.2.4
-
   posthog-node@4.18.0:
     dependencies:
       axios: 1.12.2(debug@4.4.3)
@@ -37114,8 +37082,6 @@ snapshots:
   web-streams-polyfill@3.3.3: {}
 
   web-streams-polyfill@4.0.0-beta.3: {}
-
-  web-vitals@4.2.4: {}
 
   webextension-polyfill@0.12.0: {}
 

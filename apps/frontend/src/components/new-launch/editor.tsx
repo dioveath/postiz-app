@@ -31,7 +31,7 @@ import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.co
 import { UpDownArrow } from '@gitroom/frontend/components/launches/up.down.arrow';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
-import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
+// import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useDropzone } from 'react-dropzone';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import { Dashboard } from '@uppy/react';
@@ -198,25 +198,25 @@ export const EditorWrapper: FC<{
     [internal, items]
   );
 
-  useCopilotReadable({
-    description: 'Current content of posts',
-    value: items.map((p) => p.content),
-  });
+  // useCopilotReadable({
+  //   description: 'Current content of posts',
+  //   value: items.map((p) => p.content),
+  // });
 
-  useCopilotAction({
-    name: 'setPosts',
-    description: 'a thread of posts',
-    parameters: [
-      {
-        name: 'content',
-        type: 'string[]',
-        description: 'a thread of posts',
-      },
-    ],
-    handler: async ({ content }) => {
-      setValue(content);
-    },
-  });
+  // useCopilotAction({
+  //   name: 'setPosts',
+  //   description: 'a thread of posts',
+  //   parameters: [
+  //     {
+  //       name: 'content',
+  //       type: 'string[]',
+  //       description: 'a thread of posts',
+  //     },
+  //   ],
+  //   handler: async ({ content }) => {
+  //     setValue(content);
+  //   },
+  // });
 
   const changeValue = useCallback(
     (index: number) => (value: string) => {

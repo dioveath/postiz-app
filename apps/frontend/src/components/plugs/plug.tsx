@@ -18,7 +18,7 @@ import {
   useFormContext,
 } from 'react-hook-form';
 import { Input } from '@gitroom/react/form/input';
-import { CopilotTextarea } from '@copilotkit/react-textarea';
+// import { CopilotTextarea } from '@copilotkit/react-textarea';
 import clsx from 'clsx';
 import { string, object } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -42,7 +42,7 @@ export const TextArea: FC<{
   return (
     <>
       <textarea className="hidden" {...all}></textarea>
-      <CopilotTextarea
+      {/* <CopilotTextarea
         disableBranding={true}
         placeholder={props.placeHolder}
         value={value}
@@ -61,7 +61,7 @@ export const TextArea: FC<{
           textareaPurpose: `Assist me in writing social media posts.`,
           chatApiConfigs: {},
         }}
-      />
+      /> */}
       <div className="text-red-400 text-[12px]">
         {form?.formState?.errors?.[props.name]?.message as string}
       </div>

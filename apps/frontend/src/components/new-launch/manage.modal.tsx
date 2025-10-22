@@ -24,7 +24,7 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { capitalize } from 'lodash';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
-import { CopilotPopup } from '@copilotkit/react-ui';
+// import { CopilotPopup } from '@copilotkit/react-ui';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 
@@ -490,7 +490,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <ShowAllProviders ref={ref} />
           </div>
         </div>
-        <CopilotPopup
+        {/* <CopilotPopup
           hitEscapeToClose={false}
           clickOutsideToClose={true}
           instructions={`
@@ -508,7 +508,7 @@ After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} f
             title: 'Your Assistant',
             initial: 'Hi! 👋 How can I assist you today?',
           }}
-        />
+        /> */}
       </div>
     </>
   );
