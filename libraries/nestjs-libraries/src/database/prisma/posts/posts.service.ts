@@ -405,35 +405,27 @@ export class PostsService {
     posts: Post[],
     forceRefresh = false
   ): Promise<Partial<{ postId: string; releaseURL: string }>> {
-    const getIntegration = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
+    const integrationWithApp =
+      integration as Integration & { oauthAppId?: string | null; oauthApp?: any };
+    const clientInformation =
+      await this._integrationService.getClientInformationForIntegration(
+        integrationWithApp
+      );
+    let provider = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier,
+      clientInformation
     );
 
-    if (!getIntegration) {
+    if (!provider) {
       return {};
     }
 
     if (dayjs(integration?.tokenExpiration).isBefore(dayjs()) || forceRefresh) {
-      const { accessToken, expiresIn, refreshToken, additionalSettings } =
-        await new Promise<AuthTokenDetails>((res) => {
-          getIntegration
-            .refreshToken(integration.refreshToken!)
-            .then((r) => res(r))
-            .catch(() =>
-              res({
-                accessToken: '',
-                expiresIn: 0,
-                refreshToken: '',
-                id: '',
-                name: '',
-                username: '',
-                picture: '',
-                additionalSettings: undefined,
-              })
-            );
-        });
+      const refreshed = await this._integrationService.refreshToken(
+        integrationWithApp
+      );
 
-      if (!accessToken) {
+      if (!refreshed) {
         await this._integrationService.refreshNeeded(
           integration.organizationId,
           integration.id
@@ -446,9 +438,12 @@ export class PostsService {
         return {};
       }
 
+      const { accessToken, expiresIn, refreshToken, additionalSettings } =
+        refreshed;
+
       await this._integrationService.createOrUpdateIntegration(
         additionalSettings,
-        !!getIntegration.oneTimeToken,
+        !!provider.oneTimeToken,
         integration.organizationId,
         integration.name,
         integration.picture!,
@@ -457,38 +452,49 @@ export class PostsService {
         integration.providerIdentifier,
         accessToken,
         refreshToken,
-        expiresIn
+        expiresIn,
+        undefined,
+        integration.inBetweenSteps,
+        undefined,
+        undefined,
+        integration.customInstanceDetails || undefined,
+        integration.oauthAppId || undefined
       );
 
       integration.token = accessToken;
 
-      if (getIntegration.refreshWait) {
+      if (provider.refreshWait) {
         await timer(10000);
       }
+
+      provider = this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier,
+        clientInformation
+      );
     }
 
     const newPosts = await this.updateTags(integration.organizationId, posts);
 
     try {
-      const publishedPosts = await getIntegration.post(
+      const publishedPosts = await provider.post(
         integration.internalId,
         integration.token,
         await Promise.all(
           (newPosts || []).map(async (p) => ({
             id: p.id,
             message: stripHtmlValidation(
-              getIntegration.editor,
+              provider.editor,
               p.content,
               true,
               false,
               !/<\/?[a-z][\s\S]*>/i.test(p.content),
-              getIntegration.mentionFormat
+              provider.mentionFormat
             ),
             settings: JSON.parse(p.settings || '{}'),
             media: await this.updateMedia(
               p.id,
               JSON.parse(p.image || '[]'),
-              getIntegration?.convertToJPEG || false
+              provider?.convertToJPEG || false
             ),
           }))
         ),
@@ -525,7 +531,7 @@ export class PostsService {
 
         await this.checkPlugs(
           integration.organizationId,
-          getIntegration.identifier,
+          provider.identifier,
           integration.id,
           publishedPosts[0].postId
         );

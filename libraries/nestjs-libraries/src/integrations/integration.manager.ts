@@ -28,51 +28,88 @@ import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nos
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
 import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/listmonk.provider';
+import { providerCredentialConfig } from '@gitroom/helpers/integrations/provider.credentials';
+import { ClientInformation } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
-export const socialIntegrationList: SocialProvider[] = [
-  new XProvider(),
-  new LinkedinProvider(),
-  new LinkedinPageProvider(),
-  new RedditProvider(),
-  new InstagramProvider(),
-  new InstagramStandaloneProvider(),
-  new FacebookProvider(),
-  new ThreadsProvider(),
-  new YoutubeProvider(),
-  new TiktokProvider(),
-  new PinterestProvider(),
-  new DribbbleProvider(),
-  new DiscordProvider(),
-  new SlackProvider(),
-  new MastodonProvider(),
-  new BlueskyProvider(),
-  new LemmyProvider(),
-  new FarcasterProvider(),
-  new TelegramProvider(),
-  new NostrProvider(),
-  new VkProvider(),
-  new MediumProvider(),
-  new DevToProvider(),
-  new HashnodeProvider(),
-  new WordpressProvider(),
-  new ListmonkProvider(),
-  // new MastodonCustomProvider(),
+type ProviderConstructor = new () => SocialProvider;
+
+const socialIntegrationConstructors: ProviderConstructor[] = [
+  XProvider,
+  LinkedinProvider,
+  LinkedinPageProvider,
+  RedditProvider,
+  InstagramProvider,
+  InstagramStandaloneProvider,
+  FacebookProvider,
+  ThreadsProvider,
+  YoutubeProvider,
+  TiktokProvider,
+  PinterestProvider,
+  DribbbleProvider,
+  DiscordProvider,
+  SlackProvider,
+  MastodonProvider,
+  BlueskyProvider,
+  LemmyProvider,
+  FarcasterProvider,
+  TelegramProvider,
+  NostrProvider,
+  VkProvider,
+  MediumProvider,
+  DevToProvider,
+  HashnodeProvider,
+  WordpressProvider,
+  ListmonkProvider,
 ];
+
+type ProviderRegistryEntry = {
+  ctor: ProviderConstructor;
+  instance: SocialProvider;
+};
+
+const socialIntegrationRegistry: ProviderRegistryEntry[] =
+  socialIntegrationConstructors.map((Ctor) => ({
+    ctor: Ctor,
+    instance: new Ctor(),
+  }));
+
+const socialIntegrationMap = new Map<string, ProviderRegistryEntry>(
+  socialIntegrationRegistry.map((entry) => [entry.instance.identifier, entry])
+);
 
 @Injectable()
 export class IntegrationManager {
   async getAllIntegrations() {
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
-          name: p.name,
-          identifier: p.identifier,
-          toolTip: p.toolTip,
-          editor: p.editor,
-          isExternal: !!p.externalUrl,
-          isWeb3: !!p.isWeb3,
-          ...(p.customFields ? { customFields: await p.customFields() } : {}),
-        }))
+        socialIntegrationRegistry.map(async ({ instance }) => {
+          const credentialFields = providerCredentialConfig[instance.identifier] || [];
+
+          const customFields = instance.customFields
+            ? await instance.customFields()
+            : undefined;
+
+          return {
+            name: instance.name,
+            identifier: instance.identifier,
+            toolTip: instance.toolTip,
+            editor: instance.editor,
+            isExternal: !!instance.externalUrl,
+            isWeb3: !!instance.isWeb3,
+            ...(customFields ? { customFields } : {}),
+            ...(credentialFields.length
+              ? {
+                  credentialFields: credentialFields.map((field) => ({
+                    key: field.envKey,
+                    label: field.label,
+                    required: !!field.required,
+                    type: field.type,
+                  })),
+                }
+              : {}),
+          };
+        })
       ),
       article: [] as any[],
     };
@@ -85,11 +122,11 @@ export class IntegrationManager {
       methodName: string;
     }[];
   } {
-    return socialIntegrationList.reduce(
-      (all, current) => ({
+    return socialIntegrationRegistry.reduce(
+      (all, { instance }) => ({
         ...all,
-        [current.identifier]:
-          Reflect.getMetadata('custom:tool', current.constructor.prototype) ||
+        [instance.identifier]:
+          Reflect.getMetadata('custom:tool', instance.constructor.prototype) ||
           [],
       }),
       {}
@@ -99,13 +136,13 @@ export class IntegrationManager {
   getAllRulesDescription(): {
     [key: string]: string;
   } {
-    return socialIntegrationList.reduce(
-      (all, current) => ({
+    return socialIntegrationRegistry.reduce(
+      (all, { instance }) => ({
         ...all,
-        [current.identifier]:
+        [instance.identifier]:
           Reflect.getMetadata(
             'custom:rules:description',
-            current.constructor
+            instance.constructor
           ) || '',
       }),
       {}
@@ -113,13 +150,14 @@ export class IntegrationManager {
   }
 
   getAllPlugs() {
-    return socialIntegrationList
-      .map((p) => {
+    return socialIntegrationRegistry
+      .map(({ instance }) => {
         return {
-          name: p.name,
-          identifier: p.identifier,
+          name: instance.name,
+          identifier: instance.identifier,
           plugs: (
-            Reflect.getMetadata('custom:plug', p.constructor.prototype) || []
+            Reflect.getMetadata('custom:plug', instance.constructor.prototype) ||
+            []
           )
             .filter((f: any) => !f.disabled)
             .map((p: any) => ({
@@ -135,22 +173,37 @@ export class IntegrationManager {
   }
 
   getInternalPlugs(providerName: string) {
-    const p = socialIntegrationList.find((p) => p.identifier === providerName)!;
+    const entry = socialIntegrationMap.get(providerName);
+    if (!entry) {
+      throw new Error('Integration not found');
+    }
+    const { instance } = entry;
     return {
       internalPlugs:
         (
           Reflect.getMetadata(
             'custom:internal_plug',
-            p.constructor.prototype
+            instance.constructor.prototype
           ) || []
         ).filter((f: any) => !f.disabled) || [],
     };
   }
 
   getAllowedSocialsIntegrations() {
-    return socialIntegrationList.map((p) => p.identifier);
+    return socialIntegrationRegistry.map(({ instance }) => instance.identifier);
   }
-  getSocialIntegration(integration: string): SocialProvider {
-    return socialIntegrationList.find((i) => i.identifier === integration)!;
+  getSocialIntegration(
+    integration: string,
+    clientInformation?: ClientInformation
+  ): SocialProvider {
+    const entry = socialIntegrationMap.get(integration);
+    if (!entry) {
+      throw new Error('Integration not found');
+    }
+    const provider = new entry.ctor();
+    if (provider instanceof SocialAbstract) {
+      provider.setClientInformation(clientInformation);
+    }
+    return provider;
   }
 }

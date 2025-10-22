@@ -20,34 +20,6 @@ import { GaxiosResponse } from 'gaxios/build/src/common';
 import Schema$Video = youtube_v3.Schema$Video;
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
-const clientAndYoutube = () => {
-  const client = new google.auth.OAuth2({
-    clientId: process.env.YOUTUBE_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET,
-    redirectUri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
-  });
-
-  const youtube = (newClient: OAuth2Client) =>
-    google.youtube({
-      version: 'v3',
-      auth: newClient,
-    });
-
-  const youtubeAnalytics = (newClient: OAuth2Client) =>
-    google.youtubeAnalytics({
-      version: 'v2',
-      auth: newClient,
-    });
-
-  const oauth2 = (newClient: OAuth2Client) =>
-    google.oauth2({
-      version: 'v2',
-      auth: newClient,
-    });
-
-  return { client, youtube, oauth2, youtubeAnalytics };
-};
-
 @Rules(
   'YouTube must have on video attachment, it cannot be empty'
 )
@@ -122,8 +94,36 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     return undefined;
   }
 
+  private clientAndYoutube() {
+    const client = new google.auth.OAuth2({
+      clientId: this.getCredentialValue('YOUTUBE_CLIENT_ID'),
+      clientSecret: this.getCredentialValue('YOUTUBE_CLIENT_SECRET'),
+      redirectUri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
+    });
+
+    const youtube = (newClient: OAuth2Client) =>
+      google.youtube({
+        version: 'v3',
+        auth: newClient,
+      });
+
+    const youtubeAnalytics = (newClient: OAuth2Client) =>
+      google.youtubeAnalytics({
+        version: 'v2',
+        auth: newClient,
+      });
+
+    const oauth2 = (newClient: OAuth2Client) =>
+      google.oauth2({
+        version: 'v2',
+        auth: newClient,
+      });
+
+    return { client, youtube, oauth2, youtubeAnalytics };
+  }
+
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { client, oauth2 } = clientAndYoutube();
+    const { client, oauth2 } = this.clientAndYoutube();
     client.setCredentials({ refresh_token });
     const { credentials } = await client.refreshAccessToken();
     const user = oauth2(client);
@@ -147,7 +147,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     const state = makeId(7);
-    const { client } = clientAndYoutube();
+    const { client } = this.clientAndYoutube();
     return {
       url: client.generateAuthUrl({
         access_type: 'offline',
@@ -166,7 +166,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     codeVerifier: string;
     refresh?: string;
   }) {
-    const { client, oauth2 } = clientAndYoutube();
+    const { client, oauth2 } = this.clientAndYoutube();
     const { tokens } = await client.getToken(params.code);
     client.setCredentials(tokens);
     const { scopes } = await client.getTokenInfo(tokens.access_token!);

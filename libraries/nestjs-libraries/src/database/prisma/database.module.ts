@@ -41,6 +41,8 @@ import { ThirdPartyRepository } from '@gitroom/nestjs-libraries/database/prisma/
 import { ThirdPartyService } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.service';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
+import { OAuthAppRepository } from '@gitroom/nestjs-libraries/database/prisma/oauth-apps/oauth-app.repository';
+import { OAuthAppService } from '@gitroom/nestjs-libraries/database/prisma/oauth-apps/oauth-app.service';
 
 @Global()
 @Module({
@@ -91,6 +93,8 @@ import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
     ThirdPartyRepository,
     ThirdPartyService,
     VideoManager,
+    OAuthAppRepository,
+    OAuthAppService,
   ],
   get exports() {
     return this.providers;

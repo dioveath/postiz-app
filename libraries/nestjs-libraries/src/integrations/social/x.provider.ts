@@ -105,8 +105,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     // eslint-disable-next-line prefer-rest-params
     const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.getCredentialValue('X_API_KEY')!,
+      appSecret: this.getCredentialValue('X_API_SECRET')!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -138,8 +138,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   ) {
     const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.getCredentialValue('X_API_KEY')!,
+      appSecret: this.getCredentialValue('X_API_SECRET')!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -189,8 +189,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     // eslint-disable-next-line prefer-rest-params
     const [accessTokenSplit, accessSecretSplit] = integration.token.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.getCredentialValue('X_API_KEY')!,
+      appSecret: this.getCredentialValue('X_API_SECRET')!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -225,8 +225,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.getCredentialValue('X_API_KEY')!,
+      appSecret: this.getCredentialValue('X_API_SECRET')!,
     });
     const { url, oauth_token, oauth_token_secret } =
       await client.generateAuthLink(
@@ -250,8 +250,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     const [oauth_token, oauth_token_secret] = codeVerifier.split(':');
 
     const startingClient = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.getCredentialValue('X_API_KEY')!,
+      appSecret: this.getCredentialValue('X_API_SECRET')!,
       accessToken: oauth_token,
       accessSecret: oauth_token_secret,
     });
@@ -308,8 +308,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.getCredentialValue('X_API_KEY')!,
+      appSecret: this.getCredentialValue('X_API_SECRET')!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -468,8 +468,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
     const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.getCredentialValue('X_API_KEY')!,
+      appSecret: this.getCredentialValue('X_API_SECRET')!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });
@@ -547,8 +547,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   override async mention(token: string, d: { query: string }) {
     const [accessTokenSplit, accessSecretSplit] = token.split(':');
     const client = new TwitterApi({
-      appKey: process.env.X_API_KEY!,
-      appSecret: process.env.X_API_SECRET!,
+      appKey: this.getCredentialValue('X_API_KEY')!,
+      appSecret: this.getCredentialValue('X_API_SECRET')!,
       accessToken: accessTokenSplit,
       accessSecret: accessSecretSplit,
     });

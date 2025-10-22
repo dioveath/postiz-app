@@ -1,6 +1,7 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { concurrency } from '@gitroom/helpers/utils/concurrency.service';
 import { Integration } from '@prisma/client';
+import { ClientInformation } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 
 export class RefreshToken {
   constructor(
@@ -26,6 +27,8 @@ export class NotEnoughScopes {
 export abstract class SocialAbstract {
   abstract identifier: string;
   maxConcurrentJob = 1;
+
+  private clientInformation?: ClientInformation;
 
   public handleErrors(
     body: string
@@ -157,5 +160,18 @@ export abstract class SocialAbstract {
     }
 
     return true;
+  }
+
+  setClientInformation(info?: ClientInformation) {
+    this.clientInformation = info;
+    return this;
+  }
+
+  protected getClientInformation(): ClientInformation | undefined {
+    return this.clientInformation;
+  }
+
+  protected getCredentialValue(key: string) {
+    return this.clientInformation?.[key] ?? process.env[key];
   }
 }

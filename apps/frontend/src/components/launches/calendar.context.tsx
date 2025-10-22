@@ -83,6 +83,16 @@ export interface Integrations {
     name?: string;
     id?: string;
   };
+  credentialFields?: Array<{
+    key: string;
+    label: string;
+    required: boolean;
+    type: 'text' | 'password';
+  }>;
+  oauthApp?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 // Helper function to get start and end dates based on display type

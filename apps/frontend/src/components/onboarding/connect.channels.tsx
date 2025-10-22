@@ -11,6 +11,8 @@ import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import {
   ApiModal,
   CustomVariables,
+  CredentialModal,
+  UrlModal,
 } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -66,20 +68,73 @@ export const ConnectChannels: FC = () => {
     (
         integration: Integration & {
           identifier: string;
+          credentialFields?: Array<{
+            key: string;
+            label: string;
+            required: boolean;
+            type: 'text' | 'password';
+          }>;
+          oauthApp?: { id: string; name: string } | null;
         }
       ) =>
       async () => {
-        const { url } = await (
-          await fetch(
-            `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+        const performRefresh = async (oauthAppId?: string) => {
+          const query = new URLSearchParams({
+            refresh: integration.internalId,
+          });
+
+          if (oauthAppId) {
+            query.set('oauthAppId', oauthAppId);
+          }
+
+          const response = await fetch(
+            `/integrations/social/${integration.identifier}?${query.toString()}`,
             {
               method: 'GET',
             }
-          )
-        ).json();
-        window.location.href = url;
+          );
+
+          if (!response.ok) {
+            throw new Error('Could not connect to the platform');
+          }
+
+          const { url, err } = await response.json();
+
+          if (err || !url) {
+            throw new Error('Could not connect to the platform');
+          }
+
+          setShowCustom(undefined);
+          window.location.href = url;
+        };
+
+        if (integration.credentialFields?.length) {
+          setShowCustom(
+            <CredentialModal
+              provider={integration.identifier}
+              fields={integration.credentialFields}
+              selectedAppId={integration.oauthApp?.id || undefined}
+              onSelect={async (oauthAppId) => {
+                try {
+                  await performRefresh(oauthAppId);
+                } catch (error) {
+                  toaster.show('Could not connect to the platform', 'warning');
+                  throw error;
+                }
+              }}
+              onClose={() => setShowCustom(undefined)}
+            />
+          );
+          return;
+        }
+
+        try {
+          await performRefresh();
+        } catch (error) {
+          toaster.show('Could not connect to the platform', 'warning');
+        }
       },
-    []
+    [fetch, setShowCustom, toaster]
   );
   const addMessage = useCallback(
     (
@@ -113,45 +168,166 @@ export const ConnectChannels: FC = () => {
           validation: string;
           defaultValue?: string;
           type: 'text' | 'password';
+        }>,
+        credentialFields?: Array<{
+          key: string;
+          label: string;
+          required: boolean;
+          type: 'text' | 'password';
         }>
       ) =>
       async () => {
-        const gotoIntegration = async (externalUrl?: string) => {
-          const { url, err } = await (
-            await fetch(
-              `/integrations/social/${identifier}${
-                externalUrl ? `?externalUrl=${externalUrl}` : ``
-              }`
-            )
-          ).json();
-          if (err) {
-            toaster.show('Could not connect to the platform', 'warning');
-            return;
+        const startOAuth = async ({
+          externalUrl,
+          oauthAppId,
+        }: {
+          externalUrl?: string;
+          oauthAppId?: string;
+        }) => {
+          const query = new URLSearchParams();
+
+          if (externalUrl) {
+            query.set('externalUrl', externalUrl);
           }
+
+          if (oauthAppId) {
+            query.set('oauthAppId', oauthAppId);
+          }
+
+          const response = await fetch(
+            `/integrations/social/${identifier}${
+              query.toString() ? `?${query.toString()}` : ''
+            }`
+          );
+
+          if (!response.ok) {
+            throw new Error('Could not connect to the platform');
+          }
+
+          const { url, err } = await response.json();
+
+          if (err || !url) {
+            throw new Error('Could not connect to the platform');
+          }
+
           setShowCustom(undefined);
           window.open(url, 'Social Connect', 'width=700,height=700');
+        };
+
+        const openCustomFields = ({
+          externalUrl,
+          oauthAppId,
+        }: {
+          externalUrl?: string;
+          oauthAppId?: string;
+        }) => {
+          if (!customFields?.length) {
+            return;
+          }
+
+          setShowCustom(
+            <CustomVariables
+              variables={customFields}
+              close={() => setShowCustom(undefined)}
+              onSubmit={async (values) => {
+                const encoded = Buffer.from(
+                  JSON.stringify(values)
+                ).toString('base64');
+                const query = new URLSearchParams({
+                  state: 'nostate',
+                  code: encoded,
+                });
+
+                if (oauthAppId) {
+                  query.set('oauthAppId', oauthAppId);
+                }
+
+                if (externalUrl) {
+                  query.set('externalUrl', externalUrl);
+                }
+
+                setShowCustom(undefined);
+                window.open(
+                  `/integrations/social/${identifier}?${query.toString()}`,
+                  'Social Connect',
+                  'width=700,height=700'
+                );
+              }}
+            />
+          );
+        };
+
+        const openCredentialPicker = (externalUrl?: string) => {
+          if (!credentialFields?.length) {
+            return false;
+          }
+
+          setShowCustom(
+            <CredentialModal
+              provider={identifier}
+              fields={credentialFields}
+              onSelect={async (oauthAppId) => {
+                if (customFields?.length) {
+                  setShowCustom(undefined);
+                  openCustomFields({ externalUrl, oauthAppId });
+                  return false;
+                }
+
+                try {
+                  await startOAuth({ externalUrl, oauthAppId });
+                } catch (error) {
+                  toaster.show(
+                    'Could not connect to the platform',
+                    'warning'
+                  );
+                  throw error;
+                }
+              }}
+              onClose={() => setShowCustom(undefined)}
+            />
+          );
+
+          return true;
+        };
+
+        const continueFlow = async (externalUrl?: string) => {
+          if (credentialFields?.length) {
+            openCredentialPicker(externalUrl);
+            return;
+          }
+
+          if (customFields?.length) {
+            openCustomFields({ externalUrl });
+            return;
+          }
+
+          try {
+            await startOAuth({ externalUrl });
+          } catch (error) {
+            toaster.show('Could not connect to the platform', 'warning');
+          }
         };
 
         if (isWeb3) {
           openWeb3(identifier);
           return;
         }
-        if (customFields) {
+
+        if (isExternal) {
           setShowCustom(
-            <CustomVariables
-              identifier={identifier}
-              gotoUrl={(url: string) =>
-                window.open(url, 'Social Connect', 'width=700,height=700')
-              }
-              variables={customFields}
-              close={() => setShowCustom(undefined)}
+            <UrlModal
+              gotoUrl={async (externalUrl) => {
+                setShowCustom(undefined);
+                await continueFlow(externalUrl);
+              }}
             />
           );
           return;
         }
-        await gotoIntegration();
+
+        await continueFlow();
       },
-    []
+    [fetch, openWeb3, setShowCustom, toaster]
   );
   const load = useCallback(async (path: string) => {
     const list = (await (await fetch(path)).json()).integrations;
@@ -353,7 +529,8 @@ export const ConnectChannels: FC = () => {
                     social.identifier,
                     social.isExternal,
                     social.isWeb3,
-                    social.customFields
+                    social.customFields,
+                    social.credentialFields
                   )}
                   className="h-[96px] bg-input flex flex-col justify-center items-center gap-[10px] cursor-pointer"
                 >

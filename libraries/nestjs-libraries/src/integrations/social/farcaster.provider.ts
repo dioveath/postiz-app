@@ -16,7 +16,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 const client = new NeynarAPIClient({
-  apiKey: process.env.NEYNAR_SECRET_KEY || '00000000-000-0000-000-000000000000',
+  apiKey: this.getCredentialValue('NEYNAR_SECRET_KEY') || '00000000-000-0000-000-000000000000',
 });
 
 @Rules(
@@ -53,7 +53,7 @@ export class FarcasterProvider
   async generateAuthUrl() {
     const state = makeId(17);
     return {
-      url: `${process.env.NEYNAR_CLIENT_ID}||${state}` || '',
+      url: `${this.getCredentialValue('NEYNAR_CLIENT_ID')}||${state}` || '',
       codeVerifier: makeId(10),
       state,
     };

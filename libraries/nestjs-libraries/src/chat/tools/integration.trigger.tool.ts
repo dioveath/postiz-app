@@ -2,10 +2,7 @@ import { AgentToolInterface } from '@gitroom/nestjs-libraries/chat/agent.tool.in
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import {
-  IntegrationManager,
-  socialIntegrationList,
-} from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -63,40 +60,57 @@ export class IntegrationTriggerTool implements AgentToolInterface {
           };
         }
 
-        const integrationProvider = socialIntegrationList.find(
-          (p) => p.identifier === getIntegration.providerIdentifier
-        )!;
-
-        if (!integrationProvider) {
-          return {
-            output: 'Integration not found',
-          };
-        }
-
         const tools = this._integrationManager.getAllTools();
         if (
           // @ts-ignore
-          !tools[integrationProvider.identifier].some(
+          !tools[getIntegration.providerIdentifier].some(
             (p) => p.methodName === context.methodName
           ) ||
           // @ts-ignore
-          !integrationProvider[context.methodName]
+          !this._integrationManager
+            .getSocialIntegration(getIntegration.providerIdentifier)[
+            context.methodName
+          ]
         ) {
           return { output: 'tool not found' };
         }
 
+        const integrationWithApp = getIntegration as typeof getIntegration & {
+          oauthAppId?: string | null;
+          oauthApp?: any;
+        };
+        let clientInformation =
+          await this._integrationService.getClientInformationForIntegration(
+            integrationWithApp
+          );
+
         while (true) {
           try {
+            const providerInstance = this._integrationManager.getSocialIntegration(
+              getIntegration.providerIdentifier,
+              clientInformation
+            );
+
+            const handler =
+              // @ts-ignore
+              providerInstance[context.methodName]?.bind(providerInstance);
+
+            if (!handler) {
+              return { output: 'tool not found' };
+            }
+
+            const payload = context.dataSchema.reduce(
+              (all, current) => ({
+                ...all,
+                [current.key]: current.value,
+              }),
+              {}
+            );
+
             // @ts-ignore
-            const load = await integrationProvider[context.methodName](
+            const load = await handler(
               getIntegration.token,
-              context.dataSchema.reduce(
-                (all, current) => ({
-                  ...all,
-                  [current.key]: current.value,
-                }),
-                {}
-              ),
+              payload,
               getIntegration.internalId,
               getIntegration
             );
@@ -105,19 +119,18 @@ export class IntegrationTriggerTool implements AgentToolInterface {
           } catch (err) {
             console.log(err);
             if (err instanceof RefreshToken) {
-              const {
-                accessToken,
-                refreshToken,
-                expiresIn,
-                additionalSettings,
-              } = await integrationProvider.refreshToken(
-                getIntegration.refreshToken
+              const refreshed = await this._integrationService.refreshToken(
+                integrationWithApp
               );
 
-              if (accessToken) {
+              if (refreshed) {
+                const { accessToken, refreshToken, expiresIn, additionalSettings } =
+                  refreshed;
                 await this._integrationService.createOrUpdateIntegration(
                   additionalSettings,
-                  !!integrationProvider.oneTimeToken,
+                  !!this._integrationManager.getSocialIntegration(
+                    getIntegration.providerIdentifier
+                  ).oneTimeToken,
                   getIntegration.organizationId,
                   getIntegration.name,
                   getIntegration.picture!,
@@ -126,14 +139,29 @@ export class IntegrationTriggerTool implements AgentToolInterface {
                   getIntegration.providerIdentifier,
                   accessToken,
                   refreshToken,
-                  expiresIn
+                  expiresIn,
+                  getIntegration.profile || undefined,
+                  getIntegration.inBetweenSteps,
+                  undefined,
+                  undefined,
+                  getIntegration.customInstanceDetails || undefined,
+                  getIntegration.oauthAppId || undefined
                 );
 
                 getIntegration.token = accessToken;
 
-                if (integrationProvider.refreshWait) {
+                const refreshedProvider = this._integrationManager.getSocialIntegration(
+                  getIntegration.providerIdentifier
+                );
+
+                if (refreshedProvider.refreshWait) {
                   await timer(10000);
                 }
+
+                clientInformation =
+                  await this._integrationService.getClientInformationForIntegration(
+                    integrationWithApp
+                  );
 
                 continue;
               } else {

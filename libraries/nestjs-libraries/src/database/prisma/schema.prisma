@@ -328,6 +328,8 @@ model Integration {
   refreshNeeded         Boolean                @default(false)
   postingTimes          String                 @default("[{\"time\":120}, {\"time\":400}, {\"time\":700}]")
   customInstanceDetails String?
+  oauthAppId            String?
+  oauthApp              OAuthApp?              @relation(fields: [oauthAppId], references: [id])
   customerId            String?
   customer              Customer?              @relation(fields: [customerId], references: [id])
   plugs                 Plugs[]
@@ -344,9 +346,32 @@ model Integration {
   @@index([createdAt])
   @@index([deletedAt])
   @@index([customerId])
+  @@index([oauthAppId])
   @@index([inBetweenSteps])
   @@index([refreshNeeded])
   @@index([disabled])
+}
+
+model OAuthApp {
+  id                 String         @id @default(cuid())
+  organizationId     String
+  organization       Organization   @relation(fields: [organizationId], references: [id])
+  providerIdentifier String
+  name               String
+  clientId           String
+  clientSecret       String?
+  additionalData     Json?
+  isDefault          Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  deletedAt          DateTime?
+
+  integrations       Integration[]
+
+  @@unique([organizationId, providerIdentifier, name])
+  @@index([organizationId])
+  @@index([providerIdentifier])
+  @@index([deletedAt])
 }
 
 model Signatures {

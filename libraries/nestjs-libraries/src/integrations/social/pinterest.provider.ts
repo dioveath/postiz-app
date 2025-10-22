@@ -65,7 +65,7 @@ export class PinterestProvider
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
-            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
+            `${this.getCredentialValue('PINTEREST_CLIENT_ID')}:${this.getCredentialValue('PINTEREST_CLIENT_SECRET')}`
           ).toString('base64')}`,
         },
         body: new URLSearchParams({
@@ -101,7 +101,7 @@ export class PinterestProvider
     const state = makeId(6);
     return {
       url: `https://www.pinterest.com/oauth/?client_id=${
-        process.env.PINTEREST_CLIENT_ID
+        this.getCredentialValue('PINTEREST_CLIENT_ID')
       }&redirect_uri=${encodeURIComponent(
         `${process.env.FRONTEND_URL}/integrations/social/pinterest`
       )}&response_type=code&scope=${encodeURIComponent(
@@ -123,7 +123,7 @@ export class PinterestProvider
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
-            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
+            `${this.getCredentialValue('PINTEREST_CLIENT_ID')}:${this.getCredentialValue('PINTEREST_CLIENT_SECRET')}`
           ).toString('base64')}`,
         },
         body: new URLSearchParams({

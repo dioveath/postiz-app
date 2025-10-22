@@ -47,7 +47,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
 
     return {
       url: `https://slack.com/oauth/v2/authorize?client_id=${
-        process.env.SLACK_ID
+        this.getCredentialValue('SLACK_ID')
       }&redirect_uri=${encodeURIComponent(
         `${
           process?.env?.FRONTEND_URL?.indexOf('https') === -1
@@ -72,8 +72,8 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: process.env.SLACK_ID!,
-          client_secret: process.env.SLACK_SECRET!,
+          client_id: this.getCredentialValue('SLACK_ID')!,
+          client_secret: this.getCredentialValue('SLACK_SECRET')!,
           code: params.code,
           redirect_uri: `${
             process?.env?.FRONTEND_URL?.indexOf('https') === -1

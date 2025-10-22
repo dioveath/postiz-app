@@ -38,9 +38,20 @@ export const ContinueIntegration: FC<{
         });
       }
 
+      const oauthAppId = searchParams.oauthAppId;
+
+      const payload: Record<string, any> = {
+        ...modifiedParams,
+        timezone,
+      };
+
+      if (oauthAppId) {
+        payload.oauthAppId = oauthAppId;
+      }
+
       const data = await fetch(`/integrations/social/${provider}/connect`, {
         method: 'POST',
-        body: JSON.stringify({ ...modifiedParams, timezone }),
+        body: JSON.stringify(payload),
       });
 
       if (data.status === HttpStatusCode.PreconditionFailed) {

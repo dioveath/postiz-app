@@ -219,8 +219,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
   async refreshToken(refreshToken: string): Promise<AuthTokenDetails> {
     const value = {
-      client_key: process.env.TIKTOK_CLIENT_ID!,
-      client_secret: process.env.TIKTOK_CLIENT_SECRET!,
+      client_key: this.getCredentialValue('TIKTOK_CLIENT_ID')!,
+      client_secret: this.getCredentialValue('TIKTOK_CLIENT_SECRET')!,
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
     };
@@ -268,7 +268,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     return {
       url:
         'https://www.tiktok.com/v2/auth/authorize/' +
-        `?client_key=${process.env.TIKTOK_CLIENT_ID}` +
+        `?client_key=${this.getCredentialValue('TIKTOK_CLIENT_ID')}` +
         `&redirect_uri=${encodeURIComponent(
           `${
             process?.env?.FRONTEND_URL?.indexOf('https') === -1
@@ -290,8 +290,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     refresh?: string;
   }) {
     const value = {
-      client_key: process.env.TIKTOK_CLIENT_ID!,
-      client_secret: process.env.TIKTOK_CLIENT_SECRET!,
+      client_key: this.getCredentialValue('TIKTOK_CLIENT_ID')!,
+      client_secret: this.getCredentialValue('TIKTOK_CLIENT_SECRET')!,
       code: params.code,
       grant_type: 'authorization_code',
       code_verifier: params.codeVerifier,

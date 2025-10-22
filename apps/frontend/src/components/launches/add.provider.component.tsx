@@ -1,7 +1,7 @@
 'use client';
 
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import React, { FC, useCallback, useEffect, useMemo } from 'react';
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
 import { FieldValues, FormProvider, useForm } from 'react-hook-form';
@@ -219,10 +219,9 @@ export const CustomVariables: FC<{
     type: 'text' | 'password';
   }>;
   close?: () => void;
-  identifier: string;
-  gotoUrl(url: string): void;
+  onSubmit: (values: Record<string, string>) => Promise<void> | void;
 }> = (props) => {
-  const { close, gotoUrl, identifier, variables } = props;
+  const { close, onSubmit, variables } = props;
   const modals = useModals();
   const schema = useMemo(() => {
     return object({
@@ -256,16 +255,28 @@ export const CustomVariables: FC<{
       {}
     ),
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const submit = useCallback(
     async (data: FieldValues) => {
-      modals.closeAll();
-      gotoUrl(
-        `/integrations/social/${identifier}?state=nostate&code=${Buffer.from(
-          JSON.stringify(data)
-        ).toString('base64')}`
-      );
+      setSubmitError(null);
+      setIsSubmitting(true);
+      try {
+        await onSubmit(data as Record<string, string>);
+        modals.closeAll();
+        close?.();
+      } catch (error) {
+        console.error('Failed to submit provider credentials', error);
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : 'Could not connect. Please try again.';
+        setSubmitError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
     },
-    [variables]
+    [onSubmit, close, modals]
   );
 
   const t = useT();
@@ -286,12 +297,244 @@ export const CustomVariables: FC<{
               />
             </div>
           ))}
+          {submitError && (
+            <p className="text-red-400 text-[14px]">{submitError}</p>
+          )}
           <div>
-            <Button type="submit">{t('connect', 'Connect')}</Button>
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+            >
+              {t('connect', 'Connect')}
+            </Button>
           </div>
         </form>
       </FormProvider>
     </div>
+  );
+};
+
+type CredentialField = {
+  key: string;
+  label: string;
+  required: boolean;
+  type: 'text' | 'password';
+};
+
+type OAuthAppSummary = {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const CredentialModal: FC<{
+  provider: string;
+  fields: CredentialField[];
+  onSelect: (oauthAppId: string) => Promise<void | false>;
+  onClose?: () => void;
+  selectedAppId?: string | null;
+}> = ({ provider, fields, onSelect, onClose, selectedAppId }) => {
+  const fetch = useFetch();
+  const t = useT();
+  const [apps, setApps] = useState<OAuthAppSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<'select' | 'create'>('select');
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [isDefault, setIsDefault] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const response = await fetch(
+          `/integrations/oauth-apps?provider=${provider}`
+        );
+        if (!response.ok) {
+          throw new Error('Failed to load OAuth apps');
+        }
+        const data = await response.json();
+        if (mounted) {
+          setApps(data.apps || []);
+          setMode((data.apps || []).length ? 'select' : 'create');
+        }
+      } catch (err) {
+        console.error(err);
+        if (mounted) {
+          setError('Could not load credentials.');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [provider]);
+
+  const handleSelect = useCallback(
+    async (oauthAppId: string) => {
+      setSaving(true);
+      try {
+        const result = await onSelect(oauthAppId);
+        if (result !== false) {
+          onClose?.();
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Could not use the selected credentials.');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onSelect, onClose]
+  );
+
+  const schema = useMemo(() => {
+    return object(
+      fields.reduce(
+        (acc, field) => ({
+          ...acc,
+          [field.key]: string()
+            .trim()
+            .matches(field.required ? /.+/ : /.*/, `${field.label} is invalid`)
+            .required(field.required ? `${field.label} is required` : undefined),
+        }),
+        { name: string().trim().required('Name is required') }
+      )
+    );
+  }, [fields]);
+
+  const methods = useForm({
+    mode: 'onChange',
+    resolver: yupResolver(schema),
+  });
+
+  const submit = useCallback(
+    async (values: FieldValues) => {
+      setError(null);
+      setSaving(true);
+      const { name, ...credentials } = values as Record<string, string>;
+      try {
+        const response = await fetch('/integrations/oauth-apps', {
+          method: 'POST',
+          body: JSON.stringify({
+            providerIdentifier: provider,
+            name,
+            credentials,
+            isDefault: isDefault || !apps.length,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to create credentials');
+        }
+        const created: OAuthAppSummary = await response.json();
+        setApps((prev) => [created, ...prev]);
+        await onSelect(created.id);
+        onClose?.();
+      } catch (err) {
+        console.error(err);
+        setError('Could not save credentials.');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [fetch, onSelect, onClose, provider, apps.length, isDefault]
+  );
+
+  if (loading) {
+    return <div className="p-[16px]">{t('loading', 'Loading...')}</div>;
+  }
+
+  if (mode === 'select' && apps.length) {
+    return (
+      <div className="flex flex-col gap-[16px]">
+        <div className="flex flex-col gap-[8px]">
+          {apps.map((app) => (
+            <button
+              key={app.id}
+              className={`border border-tableBorder rounded-[8px] px-[12px] py-[10px] text-left hover:border-btnSimple transition ${
+                selectedAppId === app.id ? 'border-btnSimple' : ''
+              }`}
+              onClick={() => handleSelect(app.id)}
+              disabled={saving}
+            >
+              <div className="font-medium text-[14px]">{app.name}</div>
+              <div className="text-[12px] text-customColor2">
+                {new Date(app.updatedAt).toLocaleString()}
+              </div>
+              {app.isDefault && (
+                <div className="text-[12px] text-green-500">
+                  {t('default_oauth_app', 'Default app')}
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-[8px] items-center">
+          <Button type="button" onClick={() => setMode('create')}>
+            {t('add_new_credentials', 'Add new credentials')}
+          </Button>
+          <Button
+            variant="subtle"
+            type="button"
+            disabled={saving}
+            onClick={onClose}
+          >
+            {t('cancel', 'Cancel')}
+          </Button>
+        </div>
+        {error && <p className="text-red-400 text-[14px]">{error}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <FormProvider {...methods}>
+      <form
+        className="flex flex-col gap-[12px]"
+        onSubmit={methods.handleSubmit(submit)}
+      >
+        <Input label={t('app_name', 'App name')} name="name" />
+        {fields.map((field) => (
+          <Input
+            key={field.key}
+            label={field.label}
+            name={field.key}
+            type={field.type === 'password' ? 'password' : 'text'}
+          />
+        ))}
+        <label className="flex items-center gap-[8px] text-[14px]">
+          <input
+            type="checkbox"
+            checked={isDefault}
+            onChange={(e) => setIsDefault(e.target.checked)}
+          />
+          {t('set_as_default', 'Set as default for this provider')}
+        </label>
+        {error && <p className="text-red-400 text-[14px]">{error}</p>}
+        <div className="flex gap-[8px]">
+          <Button type="submit" loading={saving} disabled={saving}>
+            {t('save_credentials', 'Save credentials')}
+          </Button>
+          <Button
+            type="button"
+            variant="subtle"
+            onClick={() => {
+              setMode(apps.length ? 'select' : 'create');
+              setError(null);
+            }}
+          >
+            {t('back', 'Back')}
+          </Button>
+        </div>
+      </form>
+    </FormProvider>
   );
 };
 export const AddProviderComponent: FC<{
@@ -305,6 +548,12 @@ export const AddProviderComponent: FC<{
       key: string;
       label: string;
       validation: string;
+      type: 'text' | 'password';
+    }>;
+    credentialFields?: Array<{
+      key: string;
+      label: string;
+      required: boolean;
       type: 'text' | 'password';
     }>;
   }>;
@@ -331,7 +580,8 @@ export const AddProviderComponent: FC<{
           validation: string;
           defaultValue?: string;
           type: 'text' | 'password';
-        }>
+        }>,
+        credentialFields?: CredentialField[]
       ) =>
       async () => {
         const openWeb3 = async () => {
@@ -358,38 +608,52 @@ export const AddProviderComponent: FC<{
           });
           return;
         };
-        const gotoIntegration = async (externalUrl?: string) => {
-          const { url, err } = await (
-            await fetch(
-              `/integrations/social/${identifier}${
-                externalUrl ? `?externalUrl=${externalUrl}` : ``
-              }`
-            )
-          ).json();
-          if (err) {
-            toaster.show('Could not connect to the platform', 'warning');
-            return;
+
+        const startOAuth = async ({
+          externalUrl,
+          oauthAppId,
+        }: {
+          externalUrl?: string;
+          oauthAppId?: string;
+        }) => {
+          const query = new URLSearchParams();
+          if (externalUrl) {
+            query.set('externalUrl', externalUrl);
           }
+          if (oauthAppId) {
+            query.set('oauthAppId', oauthAppId);
+          }
+
+          const response = await fetch(
+            `/integrations/social/${identifier}${
+              query.toString() ? `?${query.toString()}` : ''
+            }`
+          );
+
+          if (!response.ok) {
+            throw new Error('Could not connect to the platform');
+          }
+
+          const { url, err } = await response.json();
+
+          if (err || !url) {
+            throw new Error('Could not connect to the platform');
+          }
+
           window.location.href = url;
         };
-        if (isWeb3) {
-          openWeb3();
-          return;
-        }
-        if (isExternal) {
-          modal.closeAll();
-          modal.openModal({
-            title: 'URL',
-            withCloseButton: false,
-            classNames: {
-              modal: 'bg-transparent text-textColor',
-            },
-            children: <UrlModal gotoUrl={gotoIntegration} />,
-          });
-          return;
-        }
-        if (customFields) {
-          modal.closeAll();
+
+        const openCustomFields = ({
+          externalUrl,
+          oauthAppId,
+        }: {
+          externalUrl?: string;
+          oauthAppId?: string;
+        }) => {
+          if (!customFields?.length) {
+            return;
+          }
+
           modal.openModal({
             title: 'Add Provider',
             withCloseButton: false,
@@ -398,17 +662,120 @@ export const AddProviderComponent: FC<{
             },
             children: (
               <CustomVariables
-                identifier={identifier}
-                gotoUrl={(url: string) => router.push(url)}
                 variables={customFields}
+                onSubmit={async (values) => {
+                  const encoded = Buffer.from(
+                    JSON.stringify(values)
+                  ).toString('base64');
+                  const query = new URLSearchParams({
+                    state: 'nostate',
+                    code: encoded,
+                  });
+
+                  if (oauthAppId) {
+                    query.set('oauthAppId', oauthAppId);
+                  }
+
+                  if (externalUrl) {
+                    query.set('externalUrl', externalUrl);
+                  }
+
+                  router.push(
+                    `/integrations/social/${identifier}?${query.toString()}`
+                  );
+                }}
+              />
+            ),
+          });
+        };
+
+        const openCredentialPicker = (externalUrl?: string) => {
+          if (!credentialFields?.length) {
+            return false;
+          }
+
+          modal.closeAll();
+          modal.openModal({
+            title: t('select_credentials', 'Select credentials'),
+            withCloseButton: true,
+            classNames: {
+              modal: 'md',
+            },
+            children: (
+              <CredentialModal
+                provider={identifier}
+                fields={credentialFields}
+                onSelect={async (oauthAppId) => {
+                  if (customFields?.length) {
+                    modal.closeAll();
+                    openCustomFields({ externalUrl, oauthAppId });
+                    return false;
+                  }
+
+                  try {
+                    await startOAuth({ externalUrl, oauthAppId });
+                  } catch (error) {
+                    toaster.show(
+                      'Could not connect to the platform',
+                      'warning'
+                    );
+                    throw error;
+                  }
+                }}
+                onClose={() => modal.closeAll()}
+              />
+            ),
+          });
+
+          return true;
+        };
+
+        const continueFlow = async (externalUrl?: string) => {
+          if (credentialFields?.length) {
+            openCredentialPicker(externalUrl);
+            return;
+          }
+
+          if (customFields?.length) {
+            openCustomFields({ externalUrl });
+            return;
+          }
+
+          try {
+            await startOAuth({ externalUrl });
+          } catch (error) {
+            toaster.show('Could not connect to the platform', 'warning');
+          }
+        };
+
+        if (isWeb3) {
+          await openWeb3();
+          return;
+        }
+
+        if (isExternal) {
+          modal.closeAll();
+          modal.openModal({
+            title: 'URL',
+            withCloseButton: false,
+            classNames: {
+              modal: 'bg-transparent text-textColor',
+            },
+            children: (
+              <UrlModal
+                gotoUrl={async (externalUrl) => {
+                  modal.closeAll();
+                  await continueFlow(externalUrl);
+                }}
               />
             ),
           });
           return;
         }
-        await gotoIntegration();
+
+        await continueFlow();
       },
-    []
+    [fetch, modal, router, toaster, t]
   );
 
   const showApiButton = useCallback(
@@ -440,7 +807,8 @@ export const AddProviderComponent: FC<{
                 item.identifier,
                 item.isExternal,
                 item.isWeb3,
-                item.customFields
+                item.customFields,
+                item.credentialFields
               )}
               {...(!!item.toolTip
                 ? {

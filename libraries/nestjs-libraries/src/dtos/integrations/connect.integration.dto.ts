@@ -16,4 +16,8 @@ export class ConnectIntegrationDto {
   @IsString()
   @IsOptional()
   refresh?: string;
+
+  @IsString()
+  @IsOptional()
+  oauthAppId?: string;
 }

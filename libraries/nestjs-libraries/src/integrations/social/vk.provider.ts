@@ -37,7 +37,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     const formData = new FormData();
     formData.append('grant_type', 'refresh_token');
     formData.append('refresh_token', oldRefreshToken);
-    formData.append('client_id', process.env.VK_ID!);
+    formData.append('client_id', this.getCredentialValue('VK_ID')!);
     formData.append('device_id', device_id);
     formData.append('state', makeId(32));
     formData.append('scope', this.scopes.join(' '));
@@ -50,7 +50,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const newFormData = new FormData();
-    newFormData.append('client_id', process.env.VK_ID!);
+    newFormData.append('client_id', this.getCredentialValue('VK_ID')!);
     newFormData.append('access_token', access_token);
 
     const {
@@ -88,7 +88,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       url:
         'https://id.vk.com/authorize' +
         `?response_type=code` +
-        `&client_id=${process.env.VK_ID}` +
+        `&client_id=${this.getCredentialValue('VK_ID')}` +
         `&code_challenge_method=S256` +
         `&code_challenge=${challenge}` +
         `&redirect_uri=${encodeURIComponent(
@@ -113,7 +113,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     const [code, device_id] = params.code.split('&&&&');
 
     const formData = new FormData();
-    formData.append('client_id', process.env.VK_ID!);
+    formData.append('client_id', this.getCredentialValue('VK_ID')!);
     formData.append('grant_type', 'authorization_code');
     formData.append('code_verifier', params.codeVerifier);
     formData.append('device_id', device_id);
@@ -135,7 +135,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     ).json();
 
     const newFormData = new FormData();
-    newFormData.append('client_id', process.env.VK_ID!);
+    newFormData.append('client_id', this.getCredentialValue('VK_ID')!);
     newFormData.append('access_token', access_token);
 
     const {
@@ -251,7 +251,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
         await this.fetch(
           `https://api.vk.com/method/${
             replyTo ? 'wall.createComment' : 'wall.post'
-          }?v=5.251&access_token=${accessToken}&client_id=${process.env.VK_ID}`,
+          }?v=5.251&access_token=${accessToken}&client_id=${this.getCredentialValue('VK_ID')}`,
           {
             method: 'POST',
             body,

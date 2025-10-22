@@ -1,6 +1,9 @@
 'use client';
 
-import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
+import {
+  AddProviderButton,
+  CredentialModal,
+} from '@gitroom/frontend/components/launches/add.provider.component';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { groupBy, orderBy } from 'lodash';
@@ -26,6 +29,7 @@ import { NewPost } from '@gitroom/frontend/components/launches/new.post';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 
 export const SVGLine = () => {
   return (
@@ -76,6 +80,13 @@ interface MenuComponentInterface {
   refreshChannel: (
     integration: Integration & {
       identifier: string;
+      credentialFields?: Array<{
+        key: string;
+        label: string;
+        required: boolean;
+        type: 'text' | 'password';
+      }>;
+      oauthApp?: { id: string; name: string } | null;
     }
   ) => () => void;
   collapsed: boolean;
@@ -221,6 +232,13 @@ export const MenuComponent: FC<
       changeProfilePicture: boolean;
       changeNickName: boolean;
       refreshNeeded?: boolean;
+      credentialFields?: Array<{
+        key: string;
+        label: string;
+        required: boolean;
+        type: 'text' | 'password';
+      }>;
+      oauthApp?: { id: string; name: string } | null;
     };
   }
 > = (props) => {
@@ -432,24 +450,88 @@ export const LaunchesComponent = () => {
     },
     []
   );
+  const modal = useModals();
+
   const refreshChannel = useCallback(
     (
         integration: Integration & {
           identifier: string;
+          credentialFields?: Array<{
+            key: string;
+            label: string;
+            required: boolean;
+            type: 'text' | 'password';
+          }>;
+          oauthApp?: { id: string; name: string } | null;
         }
       ) =>
       async () => {
-        const { url } = await (
-          await fetch(
-            `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
+        const performRefresh = async (oauthAppId?: string) => {
+          const query = new URLSearchParams({
+            refresh: integration.internalId,
+          });
+
+          if (oauthAppId) {
+            query.set('oauthAppId', oauthAppId);
+          }
+
+          const response = await fetch(
+            `/integrations/social/${integration.identifier}?${query.toString()}`,
             {
               method: 'GET',
             }
-          )
-        ).json();
-        window.location.href = url;
+          );
+
+          if (!response.ok) {
+            throw new Error('Could not connect to the platform');
+          }
+
+          const { url, err } = await response.json();
+
+          if (err || !url) {
+            throw new Error('Could not connect to the platform');
+          }
+
+          window.location.href = url;
+        };
+
+        if (integration.credentialFields?.length) {
+          modal.openModal({
+            title: t('select_credentials', 'Select credentials'),
+            withCloseButton: true,
+            classNames: {
+              modal: 'md',
+            },
+            children: (
+              <CredentialModal
+                provider={integration.identifier}
+                fields={integration.credentialFields}
+                selectedAppId={integration.oauthApp?.id || undefined}
+                onSelect={async (oauthAppId) => {
+                  try {
+                    await performRefresh(oauthAppId);
+                  } catch (error) {
+                    toast.show(
+                      'Could not connect to the platform',
+                      'warning'
+                    );
+                    throw error;
+                  }
+                }}
+                onClose={() => modal.closeAll()}
+              />
+            ),
+          });
+          return;
+        }
+
+        try {
+          await performRefresh();
+        } catch (error) {
+          toast.show('Could not connect to the platform', 'warning');
+        }
       },
-    []
+    [fetch, modal, t, toast]
   );
   useEffect(() => {
     if (typeof window === 'undefined') {

@@ -197,7 +197,8 @@ export class IntegrationRepository {
     isBetweenSteps = false,
     refresh?: string,
     timezone?: number,
-    customInstanceDetails?: string
+    customInstanceDetails?: string,
+    oauthAppId?: string
   ) {
     const postTimes = timezone
       ? {
@@ -233,6 +234,7 @@ export class IntegrationRepository {
         refreshNeeded: false,
         rootInternalId: internalId.split('_').pop(),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        ...(oauthAppId ? { oauthAppId } : {}),
         additionalSettings: additionalSettings
           ? JSON.stringify(additionalSettings)
           : '[]',
@@ -242,6 +244,7 @@ export class IntegrationRepository {
           ? { additionalSettings: JSON.stringify(additionalSettings) }
           : {}),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        ...(oauthAppId !== undefined ? { oauthAppId } : {}),
         type: type as any,
         ...(!refresh
           ? {
@@ -306,6 +309,9 @@ export class IntegrationRepository {
         deletedAt: null,
         refreshNeeded: false,
       },
+      include: {
+        oauthApp: true,
+      },
     });
   }
 
@@ -339,6 +345,22 @@ export class IntegrationRepository {
         organizationId: org,
         id,
       },
+      include: {
+        oauthApp: true,
+      },
+    });
+  }
+
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integration.model.integration.findFirst({
+      where: {
+        organizationId: org,
+        internalId,
+        deletedAt: null,
+      },
+      include: {
+        oauthApp: true,
+      },
     });
   }
 
@@ -370,6 +392,8 @@ export class IntegrationRepository {
             picture: true,
             inBetweenSteps: true,
             providerIdentifier: true,
+            oauthAppId: true,
+            oauthApp: true,
           },
         },
       },
@@ -450,6 +474,7 @@ export class IntegrationRepository {
       },
       include: {
         customer: true,
+        oauthApp: true,
       },
     });
   }

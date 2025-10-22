@@ -80,7 +80,7 @@ export class InstagramStandaloneProvider
     return {
       url:
         `https://www.instagram.com/oauth/authorize?enable_fb_login=0&client_id=${
-          process.env.INSTAGRAM_APP_ID
+          this.getCredentialValue('INSTAGRAM_APP_ID')
         }&redirect_uri=${encodeURIComponent(
           `${
             process?.env.FRONTEND_URL?.indexOf('https') == -1
@@ -101,8 +101,8 @@ export class InstagramStandaloneProvider
     refresh: string;
   }) {
     const formData = new FormData();
-    formData.append('client_id', process.env.INSTAGRAM_APP_ID!);
-    formData.append('client_secret', process.env.INSTAGRAM_APP_SECRET!);
+    formData.append('client_id', this.getCredentialValue('INSTAGRAM_APP_ID')!);
+    formData.append('client_secret', this.getCredentialValue('INSTAGRAM_APP_SECRET')!);
     formData.append('grant_type', 'authorization_code');
     formData.append(
       'redirect_uri',
@@ -125,8 +125,8 @@ export class InstagramStandaloneProvider
       await fetch(
         'https://graph.instagram.com/access_token' +
           '?grant_type=ig_exchange_token' +
-          `&client_id=${process.env.INSTAGRAM_APP_ID}` +
-          `&client_secret=${process.env.INSTAGRAM_APP_SECRET}` +
+          `&client_id=${this.getCredentialValue('INSTAGRAM_APP_ID')}` +
+          `&client_secret=${this.getCredentialValue('INSTAGRAM_APP_SECRET')}` +
           `&access_token=${getAccessToken.access_token}`
       )
     ).json();

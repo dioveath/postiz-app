@@ -269,6 +269,9 @@ export const Menu: FC<{
     setShow(false);
   }, [integrations]);
   const updateCredentials = useCallback(() => {
+    if (!findIntegration?.customFields?.length) {
+      return;
+    }
     modal.openModal({
       title: 'Custom URL',
       withCloseButton: false,
@@ -277,13 +280,38 @@ export const Menu: FC<{
       },
       children: (
         <CustomVariables
-          identifier={findIntegration.identifier}
-          gotoUrl={(url: string) => router.push(url)}
           variables={findIntegration.customFields}
+          onSubmit={async (values) => {
+            if (findIntegration.customFieldMode === 'credentials') {
+              const encoded = Buffer.from(JSON.stringify(values)).toString(
+                'base64'
+              );
+              const query = new URLSearchParams({
+                credentials: encoded,
+                refresh: findIntegration.internalId,
+              });
+              const response = await fetch(
+                `/integrations/social/${findIntegration.identifier}?${query.toString()}`
+              );
+              const { url, err } = await response.json();
+              if (err || !url) {
+                toast.show('Could not connect to the platform', 'warning');
+                throw new Error('Could not connect');
+              }
+              window.location.href = url;
+              return;
+            }
+
+            router.push(
+              `/integrations/social/${findIntegration.identifier}?state=nostate&code=${Buffer.from(
+                JSON.stringify(values)
+              ).toString('base64')}`
+            );
+          }}
         />
       ),
     });
-  }, []);
+  }, [findIntegration]);
   return (
     <div
       className="cursor-pointer relative select-none"

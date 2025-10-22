@@ -33,7 +33,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
-            `${process.env.PINTEREST_CLIENT_ID}:${process.env.PINTEREST_CLIENT_SECRET}`
+            `${this.getCredentialValue('PINTEREST_CLIENT_ID')}:${this.getCredentialValue('PINTEREST_CLIENT_SECRET')}`
           ).toString('base64')}`,
         },
         body: new URLSearchParams({
@@ -88,7 +88,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
     const state = makeId(6);
     return {
       url: `https://dribbble.com/oauth/authorize?client_id=${
-        process.env.DRIBBBLE_CLIENT_ID
+        this.getCredentialValue('DRIBBBLE_CLIENT_ID')
       }&redirect_uri=${encodeURIComponent(
         `${process.env.FRONTEND_URL}/integrations/social/dribbble`
       )}&response_type=code&scope=${this.scopes.join('+')}&state=${state}`,
@@ -104,7 +104,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   }) {
     const { access_token, scope } = await (
       await this.fetch(
-        `https://dribbble.com/oauth/token?client_id=${process.env.DRIBBBLE_CLIENT_ID}&client_secret=${process.env.DRIBBBLE_CLIENT_SECRET}&code=${params.code}&redirect_uri=${process.env.FRONTEND_URL}/integrations/social/dribbble`,
+        `https://dribbble.com/oauth/token?client_id=${this.getCredentialValue('DRIBBBLE_CLIENT_ID')}&client_secret=${this.getCredentialValue('DRIBBBLE_CLIENT_SECRET')}&code=${params.code}&redirect_uri=${process.env.FRONTEND_URL}/integrations/social/dribbble`,
         {
           method: 'POST',
         }

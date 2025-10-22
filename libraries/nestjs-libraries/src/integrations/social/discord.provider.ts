@@ -33,9 +33,9 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
-            process.env.DISCORD_CLIENT_ID +
+            this.getCredentialValue('DISCORD_CLIENT_ID') +
               ':' +
-              process.env.DISCORD_CLIENT_SECRET
+              this.getCredentialValue('DISCORD_CLIENT_SECRET')
           ).toString('base64')}`,
         },
       })
@@ -63,7 +63,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     const state = makeId(6);
     return {
       url: `https://discord.com/oauth2/authorize?client_id=${
-        process.env.DISCORD_CLIENT_ID
+        this.getCredentialValue('DISCORD_CLIENT_ID')
       }&permissions=377957124096&response_type=code&redirect_uri=${encodeURIComponent(
         `${process.env.FRONTEND_URL}/integrations/social/discord`
       )}&integration_type=0&scope=bot+identify+guilds&state=${state}`,
@@ -88,9 +88,9 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           Authorization: `Basic ${Buffer.from(
-            process.env.DISCORD_CLIENT_ID +
+            this.getCredentialValue('DISCORD_CLIENT_ID') +
               ':' +
-              process.env.DISCORD_CLIENT_SECRET
+              this.getCredentialValue('DISCORD_CLIENT_SECRET')
           ).toString('base64')}`,
         },
       })
@@ -122,7 +122,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     const list = await (
       await fetch(`https://discord.com/api/guilds/${id}/channels`, {
         headers: {
-          Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+          Authorization: `Bot ${this.getCredentialValue('DISCORD_BOT_TOKEN_ID')}`,
         },
       })
     ).json();
@@ -148,7 +148,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
           {
             method: 'POST',
             headers: {
-              Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+              Authorization: `Bot ${this.getCredentialValue('DISCORD_BOT_TOKEN_ID')}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -195,7 +195,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
         await fetch(`https://discord.com/api/channels/${channel}/messages`, {
           method: 'POST',
           headers: {
-            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+            Authorization: `Bot ${this.getCredentialValue('DISCORD_BOT_TOKEN_ID')}`,
           },
           body: form,
         })
@@ -217,7 +217,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
       await fetch(`https://discord.com/api/guilds/${id}/members/@me`, {
         method: 'PATCH',
         headers: {
-          Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+          Authorization: `Bot ${this.getCredentialValue('DISCORD_BOT_TOKEN_ID')}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -240,7 +240,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     const allRoles = await (
       await fetch(`https://discord.com/api/guilds/${id}/roles`, {
         headers: {
-          Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+          Authorization: `Bot ${this.getCredentialValue('DISCORD_BOT_TOKEN_ID')}`,
           'Content-Type': 'application/json',
         },
       })
@@ -257,7 +257,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
         `https://discord.com/api/guilds/${id}/members/search?query=${data.query}`,
         {
           headers: {
-            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN_ID}`,
+            Authorization: `Bot ${this.getCredentialValue('DISCORD_BOT_TOKEN_ID')}`,
             'Content-Type': 'application/json',
           },
         }

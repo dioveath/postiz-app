@@ -25,7 +25,6 @@ import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/in
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
-import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { PlugDto } from '@gitroom/nestjs-libraries/dtos/plugs/plug.dto';
 import {
   NotEnoughScopes,
@@ -38,6 +37,8 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { uniqBy } from 'lodash';
+import { OAuthAppService } from '@gitroom/nestjs-libraries/database/prisma/oauth-apps/oauth-app.service';
+import { providerCredentialConfig } from '@gitroom/helpers/integrations/provider.credentials';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -45,7 +46,8 @@ export class IntegrationsController {
   constructor(
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
-    private _postService: PostsService
+    private _postService: PostsService,
+    private _oauthAppService: OAuthAppService
   ) {}
   @Get('/')
   getIntegration() {
@@ -94,6 +96,11 @@ export class IntegrationsController {
           const findIntegration = this._integrationManager.getSocialIntegration(
             p.providerIdentifier
           );
+          const credentialFields =
+            providerCredentialConfig[p.providerIdentifier] || [];
+          const customFields = findIntegration.customFields
+            ? await findIntegration.customFields()
+            : undefined;
           return {
             name: p.name,
             id: p.id,
@@ -104,9 +111,20 @@ export class IntegrationsController {
             identifier: p.providerIdentifier,
             inBetweenSteps: p.inBetweenSteps,
             refreshNeeded: p.refreshNeeded,
-            isCustomFields: !!findIntegration.customFields,
-            ...(findIntegration.customFields
-              ? { customFields: await findIntegration.customFields() }
+            isCustomFields: !!customFields,
+            ...(customFields ? { customFields } : {}),
+            ...(credentialFields.length
+              ? {
+                  credentialFields: credentialFields.map((field) => ({
+                    key: field.envKey,
+                    label: field.label,
+                    required: !!field.required,
+                    type: field.type,
+                  })),
+                  oauthApp: p.oauthApp
+                    ? { id: p.oauthApp.id, name: p.oauthApp.name }
+                    : undefined,
+                }
               : {}),
             display: p.profile,
             type: p.type,
@@ -119,6 +137,62 @@ export class IntegrationsController {
         })
       ),
     };
+  }
+
+  @Get('/oauth-apps')
+  async listOAuthApps(
+    @GetOrgFromRequest() org: Organization,
+    @Query('provider') provider: string
+  ) {
+    if (!provider) {
+      throw new HttpException('Missing provider', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!providerCredentialConfig[provider]) {
+      throw new HttpException('Unsupported provider', HttpStatus.BAD_REQUEST);
+    }
+
+    const apps = await this._oauthAppService.list(org.id, provider);
+
+    return {
+      apps,
+      fields: providerCredentialConfig[provider].map((field) => ({
+        key: field.envKey,
+        label: field.label,
+        required: !!field.required,
+        type: field.type,
+      })),
+    };
+  }
+
+  @Post('/oauth-apps')
+  async createOAuthApp(
+    @GetOrgFromRequest() org: Organization,
+    @Body()
+    body: {
+      providerIdentifier: string;
+      name: string;
+      credentials: Record<string, string>;
+      isDefault?: boolean;
+    }
+  ) {
+    const { providerIdentifier, name, credentials, isDefault } = body;
+
+    if (!providerIdentifier || !name || !credentials) {
+      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!providerCredentialConfig[providerIdentifier]) {
+      throw new HttpException('Unsupported provider', HttpStatus.BAD_REQUEST);
+    }
+
+    return this._oauthAppService.create(
+      org.id,
+      providerIdentifier,
+      name.trim(),
+      credentials,
+      isDefault
+    );
   }
 
   @Post('/:id/settings')
@@ -193,7 +267,9 @@ export class IntegrationsController {
   async getIntegrationUrl(
     @Param('integration') integration: string,
     @Query('refresh') refresh: string,
-    @Query('externalUrl') externalUrl: string
+    @Query('externalUrl') externalUrl: string,
+    @Query('oauthAppId') oauthAppId: string,
+    @GetOrgFromRequest() org: Organization
   ) {
     if (
       !this._integrationManager
@@ -218,8 +294,31 @@ export class IntegrationsController {
           }
         : undefined;
 
-      const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl(getExternalUrl);
+      const existingIntegration = refresh
+        ? await this._integrationService.getIntegrationByInternalId(
+            org.id,
+            refresh
+          )
+        : null;
+
+      const clientInformation = await this._oauthAppService.buildClientInformation(
+        org.id,
+        integration,
+        {
+          oauthAppId: oauthAppId || existingIntegration?.oauthAppId,
+          instanceUrl: getExternalUrl?.instanceUrl,
+          fallbackToEnv: true,
+        }
+      );
+
+      const providerWithCredentials = this._integrationManager.getSocialIntegration(
+        integration,
+        clientInformation
+      );
+
+      const { codeVerifier, state, url } = await providerWithCredentials.generateAuthUrl(
+        clientInformation
+      );
 
       if (refresh) {
         await ioRedis.set(`refresh:${state}`, refresh, 'EX', 300);
@@ -232,6 +331,15 @@ export class IntegrationsController {
         'EX',
         300
       );
+
+      if (clientInformation?.oauthAppId) {
+        await ioRedis.set(
+          `oauth-app:${state}`,
+          clientInformation.oauthAppId,
+          'EX',
+          300
+        );
+      }
 
       return { url };
     } catch (err) {
@@ -317,18 +425,35 @@ export class IntegrationsController {
       throw new Error('Invalid integration');
     }
 
-    const integrationProvider = this._integrationManager.getSocialIntegration(
-      getIntegration.providerIdentifier
-    );
-    if (!integrationProvider) {
-      throw new Error('Invalid provider');
-    }
+    const integrationWithApp = getIntegration as typeof getIntegration & {
+      oauthAppId?: string | null;
+      oauthApp?: any;
+    };
+    let clientInformation =
+      await this._integrationService.getClientInformationForIntegration(
+        integrationWithApp
+      );
 
-    // @ts-ignore
-    if (integrationProvider[body.name]) {
+    const providerMethod = (
+      this._integrationManager.getSocialIntegration(
+        getIntegration.providerIdentifier
+      ) as any
+    )[body.name];
+
+    if (providerMethod) {
       try {
+        const providerInstance = this._integrationManager.getSocialIntegration(
+          getIntegration.providerIdentifier,
+          clientInformation
+        );
+
         // @ts-ignore
-        const load = await integrationProvider[body.name](
+        const handler = providerInstance[body.name]?.bind(providerInstance);
+        if (!handler) {
+          return false;
+        }
+
+        const load = await handler(
           getIntegration.token,
           body.data,
           getIntegration.internalId,
@@ -338,13 +463,18 @@ export class IntegrationsController {
         return load;
       } catch (err) {
         if (err instanceof RefreshToken) {
-          const { accessToken, refreshToken, expiresIn, additionalSettings } =
-            await integrationProvider.refreshToken(getIntegration.refreshToken);
+          const refreshed = await this._integrationService.refreshToken(
+            integrationWithApp
+          );
 
-          if (accessToken) {
+          if (refreshed) {
+            const { accessToken, refreshToken, expiresIn, additionalSettings } =
+              refreshed;
             await this._integrationService.createOrUpdateIntegration(
               additionalSettings,
-              !!integrationProvider.oneTimeToken,
+              !!this._integrationManager.getSocialIntegration(
+                getIntegration.providerIdentifier
+              ).oneTimeToken,
               getIntegration.organizationId,
               getIntegration.name,
               getIntegration.picture!,
@@ -353,14 +483,30 @@ export class IntegrationsController {
               getIntegration.providerIdentifier,
               accessToken,
               refreshToken,
-              expiresIn
+              expiresIn,
+              undefined,
+              integrationWithApp.inBetweenSteps,
+              undefined,
+              undefined,
+              integrationWithApp.customInstanceDetails || undefined,
+              integrationWithApp.oauthAppId || undefined
             );
 
             getIntegration.token = accessToken;
 
-            if (integrationProvider.refreshWait) {
+            const refreshedProvider = this._integrationManager.getSocialIntegration(
+              getIntegration.providerIdentifier
+            );
+
+            if (refreshedProvider.refreshWait) {
               await timer(10000);
             }
+
+            clientInformation =
+              await this._integrationService.getClientInformationForIntegration(
+                integrationWithApp
+              );
+
             return this.functionIntegration(org, body);
           } else {
             await this._integrationService.disconnectChannel(
@@ -420,6 +566,60 @@ export class IntegrationsController {
       await ioRedis.del(`refresh:${body.state}`);
     }
 
+    const cachedOauthAppId = await ioRedis.get(`oauth-app:${body.state}`);
+    if (cachedOauthAppId) {
+      await ioRedis.del(`oauth-app:${body.state}`);
+    }
+
+    const existingIntegration = body.refresh
+      ? await this._integrationService.getIntegrationByInternalId(
+          org.id,
+          body.refresh
+        )
+      : null;
+
+    const externalDetails = details ? JSON.parse(details) : undefined;
+
+    const resolvedOauthAppId =
+      body.oauthAppId || cachedOauthAppId || existingIntegration?.oauthAppId || undefined;
+
+    const clientInformation = await this._oauthAppService.buildClientInformation(
+      org.id,
+      integration,
+      {
+        oauthAppId: resolvedOauthAppId,
+        instanceUrl: externalDetails?.instanceUrl,
+        fallbackToEnv: true,
+      }
+    );
+
+    const providerWithCredentials = this._integrationManager.getSocialIntegration(
+      integration,
+      clientInformation
+    );
+
+    let auth = await providerWithCredentials.authenticate(
+      {
+        code: body.code,
+        codeVerifier: getCodeVerifier,
+        refresh: body.refresh,
+      },
+      externalDetails,
+      clientInformation
+    );
+
+    if (typeof auth === 'string') {
+      throw new NotEnoughScopes(auth);
+    }
+
+    if (refresh && providerWithCredentials.reConnect) {
+      auth = await providerWithCredentials.reConnect(
+        auth.id,
+        refresh,
+        auth.accessToken
+      );
+    }
+
     const {
       error,
       accessToken,
@@ -430,40 +630,7 @@ export class IntegrationsController {
       picture,
       username,
       additionalSettings,
-      // eslint-disable-next-line no-async-promise-executor
-    } = await new Promise<AuthTokenDetails>(async (res) => {
-      const auth = await integrationProvider.authenticate(
-        {
-          code: body.code,
-          codeVerifier: getCodeVerifier,
-          refresh: body.refresh,
-        },
-        details ? JSON.parse(details) : undefined
-      );
-
-      if (typeof auth === 'string') {
-        return res({
-          error: auth,
-          accessToken: '',
-          id: '',
-          name: '',
-          picture: '',
-          username: '',
-          additionalSettings: [],
-        });
-      }
-
-      if (refresh && integrationProvider.reConnect) {
-        const newAuth = await integrationProvider.reConnect(
-          auth.id,
-          refresh,
-          auth.accessToken
-        );
-        return res(newAuth);
-      }
-
-      return res(auth);
-    });
+    } = auth;
 
     if (error) {
       throw new NotEnoughScopes(error);
@@ -521,7 +688,8 @@ export class IntegrationsController {
         ? AuthService.fixedEncryption(
             Buffer.from(body.code, 'base64').toString()
           )
-        : undefined
+        : undefined,
+      resolvedOauthAppId
     );
   }
 
