@@ -17,6 +17,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
+import { OAuthAppSelector } from '@gitroom/frontend/components/launches/oauth-app-selector';
 const resolver = classValidatorResolver(ApiKeyDto);
 export const useAddProvider = (update?: () => void) => {
   const modal = useModals();
@@ -359,12 +360,12 @@ export const AddProviderComponent: FC<{
           });
           return;
         };
-        const gotoIntegration = async (externalUrl?: string) => {
+        const gotoIntegration = async (externalUrl?: string, oauthAppId?: string) => {
           const { url, err } = await (
             await fetch(
               `/integrations/social/${identifier}${
                 externalUrl ? `?externalUrl=${externalUrl}` : ``
-              }`
+              }${oauthAppId ? `${externalUrl ? '&' : '?'}oauthAppId=${oauthAppId}` : ''}`
             )
           ).json();
           if (err) {
@@ -407,6 +408,30 @@ export const AddProviderComponent: FC<{
           });
           return;
         }
+        
+        // For YouTube, show OAuth app selector first
+        if (identifier === 'youtube') {
+          modal.closeAll();
+          modal.openModal({
+            title: 'Select OAuth App',
+            withCloseButton: false,
+            classNames: {
+              modal: 'bg-transparent text-textColor',
+            },
+            children: (
+              <OAuthAppSelector
+                provider={identifier}
+                onSelect={(oauthAppId) => {
+                  modal.closeAll();
+                  gotoIntegration(undefined, oauthAppId);
+                }}
+                onCancel={() => modal.closeAll()}
+              />
+            ),
+          });
+          return;
+        }
+        
         await gotoIntegration();
       },
     []

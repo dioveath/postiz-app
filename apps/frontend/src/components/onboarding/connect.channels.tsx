@@ -21,6 +21,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
+import { OAuthAppSelector } from '@gitroom/frontend/components/launches/oauth-app-selector';
 export const ConnectChannels: FC = () => {
   const fetch = useFetch();
   const { isGeneral } = useVariables();
@@ -116,12 +117,12 @@ export const ConnectChannels: FC = () => {
         }>
       ) =>
       async () => {
-        const gotoIntegration = async (externalUrl?: string) => {
+        const gotoIntegration = async (externalUrl?: string, oauthAppId?: string) => {
           const { url, err } = await (
             await fetch(
               `/integrations/social/${identifier}${
                 externalUrl ? `?externalUrl=${externalUrl}` : ``
-              }`
+              }${oauthAppId ? `${externalUrl ? '&' : '?'}oauthAppId=${oauthAppId}` : ''}`
             )
           ).json();
           if (err) {
@@ -149,6 +150,22 @@ export const ConnectChannels: FC = () => {
           );
           return;
         }
+        
+        // For YouTube, show OAuth app selector first
+        if (identifier === 'youtube') {
+          setShowCustom(
+            <OAuthAppSelector
+              provider={identifier}
+              onSelect={(oauthAppId) => {
+                setShowCustom(undefined);
+                gotoIntegration(undefined, oauthAppId);
+              }}
+              onCancel={() => setShowCustom(undefined)}
+            />
+          );
+          return;
+        }
+        
         await gotoIntegration();
       },
     []
