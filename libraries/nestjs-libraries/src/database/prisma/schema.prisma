@@ -24,6 +24,7 @@ model Organization {
   github            GitHub[]
   subscription      Subscription?
   Integration       Integration[]
+  oauthApps         OAuthApp[]
   post              Post[]             @relation("organization")
   submittedPost     Post[]             @relation("submittedForOrg")
   allowTrial        Boolean            @default(false)
@@ -314,6 +315,8 @@ model Integration {
   picture               String?
   providerIdentifier    String
   type                  String
+  oauthAppId            String?
+  oauthApp              OAuthApp?              @relation(fields: [oauthAppId], references: [id])
   token                 String
   disabled              Boolean                @default(false)
   tokenExpiration       DateTime?
@@ -347,6 +350,27 @@ model Integration {
   @@index([inBetweenSteps])
   @@index([refreshNeeded])
   @@index([disabled])
+}
+
+model OAuthApp {
+  id                    String        @id @default(cuid())
+  organizationId        String
+  organization          Organization  @relation(fields: [organizationId], references: [id])
+  providerIdentifier    String        // e.g., "youtube", "twitter"
+  name                  String        // User-friendly name for the app
+  clientId              String
+  clientSecret          String        // Should be encrypted
+  isDefault             Boolean       @default(false)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  deletedAt             DateTime?
+  
+  integrations          Integration[]
+  
+  @@unique([organizationId, providerIdentifier, clientId])
+  @@index([organizationId])
+  @@index([providerIdentifier])
+  @@index([deletedAt])
 }
 
 model Signatures {

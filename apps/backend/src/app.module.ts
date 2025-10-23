@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, OnModuleInit } from '@nestjs/common';
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
 import { ApiModule } from '@gitroom/backend/api/api.module';
 import { APP_GUARD } from '@nestjs/core';
@@ -55,4 +55,11 @@ import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdpart
     // ChatModule,
   ],
 })
-export class AppModule {}
+// export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor() {}
+
+  async onModuleInit() {
+    // Placeholder for initializing default OAuth apps if needed; moved to a dedicated module/service if desired
+  }
+}

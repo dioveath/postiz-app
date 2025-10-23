@@ -20,6 +20,8 @@ import { IntegrationFunctionDto } from '@gitroom/nestjs-libraries/dtos/integrati
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { ApiTags } from '@nestjs/swagger';
+import { OAuthAppService } from '@gitroom/nestjs-libraries/database/prisma/oauth-app/oauth-app.service';
+import { CreateOAuthAppDto } from '@gitroom/nestjs-libraries/dtos/integrations/oauth-app.dto';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotEnoughScopesFilter } from '@gitroom/nestjs-libraries/integrations/integration.missing.scopes';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
@@ -45,7 +47,8 @@ export class IntegrationsController {
   constructor(
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
-    private _postService: PostsService
+    private _postService: PostsService,
+    private _oauthAppService: OAuthAppService
   ) {}
   @Get('/')
   getIntegration() {
@@ -193,7 +196,8 @@ export class IntegrationsController {
   async getIntegrationUrl(
     @Param('integration') integration: string,
     @Query('refresh') refresh: string,
-    @Query('externalUrl') externalUrl: string
+    @Query('externalUrl') externalUrl: string,
+    @Query('oauthAppId') oauthAppId: string
   ) {
     if (
       !this._integrationManager
@@ -218,8 +222,24 @@ export class IntegrationsController {
           }
         : undefined;
 
+      // If oauthAppId provided, fetch and pass credentials to generateAuthUrl
+      let oauthAppClientInfo: any = undefined;
+      if (oauthAppId) {
+        const app = await this._oauthAppService.getOAuthAppForAuth(oauthAppId);
+        if (app) {
+          oauthAppClientInfo = {
+            client_id: app.clientId,
+            client_secret: AuthService.fixedDecryption(app.clientSecret),
+            oauthAppId: app.id,
+            instanceUrl: '',
+          };
+        }
+      }
+
+      const clientInfo = getExternalUrl || oauthAppClientInfo || undefined;
+
       const { codeVerifier, state, url } =
-        await integrationProvider.generateAuthUrl(getExternalUrl);
+        await integrationProvider.generateAuthUrl(clientInfo);
 
       if (refresh) {
         await ioRedis.set(`refresh:${state}`, refresh, 'EX', 300);
@@ -232,6 +252,10 @@ export class IntegrationsController {
         'EX',
         300
       );
+
+      if (oauthAppClientInfo?.oauthAppId) {
+        await ioRedis.set(`oauthapp:${state}`, oauthAppClientInfo.oauthAppId, 'EX', 300);
+      }
 
       return { url };
     } catch (err) {
@@ -342,6 +366,13 @@ export class IntegrationsController {
             await integrationProvider.refreshToken(getIntegration.refreshToken);
 
           if (accessToken) {
+            // Auto-migrate to default OAuth app for YouTube if none selected
+            // @ts-ignore - oauthAppId may not be selected in older rows
+            let oauthAppIdToSet = (getIntegration as any).oauthAppId as string | undefined;
+            if (!oauthAppIdToSet && getIntegration.providerIdentifier === 'youtube') {
+              const defaultApp = await this._oauthAppService.getOrCreateDefaultOAuthApp('youtube');
+              oauthAppIdToSet = defaultApp?.id;
+            }
             await this._integrationService.createOrUpdateIntegration(
               additionalSettings,
               !!integrationProvider.oneTimeToken,
@@ -354,6 +385,13 @@ export class IntegrationsController {
               accessToken,
               refreshToken,
               expiresIn
+            ,
+              undefined,
+              false,
+              undefined,
+              undefined,
+              getIntegration.customInstanceDetails || undefined,
+              oauthAppIdToSet
             );
 
             getIntegration.token = accessToken;
@@ -432,13 +470,32 @@ export class IntegrationsController {
       additionalSettings,
       // eslint-disable-next-line no-async-promise-executor
     } = await new Promise<AuthTokenDetails>(async (res) => {
+      // Try to resolve oauthApp selection from Redis if present
+      const oauthAppId = await ioRedis.get(`oauthapp:${body.state}`);
+      if (oauthAppId) {
+        await ioRedis.del(`oauthapp:${body.state}`);
+      }
+
+      let clientInfo: any = details ? JSON.parse(details) : undefined;
+      if (!clientInfo && oauthAppId) {
+        const app = await this._oauthAppService.getOAuthAppForAuth(oauthAppId);
+        if (app) {
+          clientInfo = {
+            client_id: app.clientId,
+            client_secret: AuthService.fixedDecryption(app.clientSecret),
+            oauthAppId: app.id,
+            instanceUrl: '',
+          };
+        }
+      }
+
       const auth = await integrationProvider.authenticate(
         {
           code: body.code,
           codeVerifier: getCodeVerifier,
           refresh: body.refresh,
         },
-        details ? JSON.parse(details) : undefined
+        clientInfo
       );
 
       if (typeof auth === 'string') {
@@ -499,6 +556,12 @@ export class IntegrationsController {
       throw new HttpException('', 412);
     }
 
+    // Thread through selected oauthAppId if was set
+    const selectedOauthAppId = await ioRedis.get(`oauthapp:${body.state}`);
+    if (selectedOauthAppId) {
+      await ioRedis.del(`oauthapp:${body.state}`);
+    }
+
     return this._integrationService.createOrUpdateIntegration(
       additionalSettings,
       !!integrationProvider.oneTimeToken,
@@ -521,8 +584,39 @@ export class IntegrationsController {
         ? AuthService.fixedEncryption(
             Buffer.from(body.code, 'base64').toString()
           )
-        : undefined
+        : undefined,
+      selectedOauthAppId || undefined
     );
+  }
+
+  @Get('/oauth-apps')
+  async getOAuthApps(
+    @GetOrgFromRequest() org: Organization,
+    @Query('provider') provider?: string
+  ) {
+    return this._oauthAppService.getOAuthAppsList(org.id, provider);
+  }
+
+  @Post('/oauth-apps')
+  async createOAuthApp(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateOAuthAppDto
+  ) {
+    return this._oauthAppService.createOAuthApp(
+      org.id,
+      body.providerIdentifier,
+      body.name,
+      body.clientId,
+      body.clientSecret
+    );
+  }
+
+  @Delete('/oauth-apps/:id')
+  async deleteOAuthApp(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._oauthAppService.deleteOAuthApp(id, org.id);
   }
 
   @Post('/disable')

@@ -34,6 +34,8 @@ import { AutopostController } from '@gitroom/backend/api/routes/autopost.control
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
+import { OAuthAppService } from '@gitroom/nestjs-libraries/database/prisma/oauth-app/oauth-app.service';
+import { OAuthAppRepository } from '@gitroom/nestjs-libraries/database/prisma/oauth-app/oauth-app.repository';
 
 const authenticatedController = [
   UsersController,
@@ -52,8 +54,9 @@ const authenticatedController = [
   SignatureController,
   AutopostController,
   SetsController,
-  ThirdPartyController,
+  ThirdPartyController
 ];
+
 @Module({
   imports: [UploadModule],
   controllers: [
@@ -77,6 +80,8 @@ const authenticatedController = [
     TrackService,
     // ShortLinkService,
     // Nowpayments,
+    OAuthAppService,
+    OAuthAppRepository
   ],
   get exports() {
     return [...this.imports, ...this.providers];

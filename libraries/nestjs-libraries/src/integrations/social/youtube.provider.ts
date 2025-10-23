@@ -20,10 +20,12 @@ import { GaxiosResponse } from 'gaxios/build/src/common';
 import Schema$Video = youtube_v3.Schema$Video;
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
-const clientAndYoutube = () => {
+const clientAndYoutube = (credentials?: { clientId?: string; clientSecret?: string }) => {
+  
+
   const client = new google.auth.OAuth2({
-    clientId: process.env.YOUTUBE_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET,
+    clientId: credentials?.clientId || process.env.YOUTUBE_CLIENT_ID,
+    clientSecret: credentials?.clientSecret || process.env.YOUTUBE_CLIENT_SECRET,
     redirectUri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
   });
 
@@ -122,8 +124,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     return undefined;
   }
 
-  async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {
-    const { client, oauth2 } = clientAndYoutube();
+  async refreshToken(refresh_token: string, clientInformation?: { client_id?: string; client_secret?: string }): Promise<AuthTokenDetails> {
+    const { client, oauth2 } = clientAndYoutube({
+      clientId: clientInformation?.client_id,
+      clientSecret: clientInformation?.client_secret,
+    });
     client.setCredentials({ refresh_token });
     const { credentials } = await client.refreshAccessToken();
     const user = oauth2(client);
@@ -145,9 +150,12 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async generateAuthUrl() {
+  async generateAuthUrl(clientInformation?: { client_id?: string; client_secret?: string }) {
     const state = makeId(7);
-    const { client } = clientAndYoutube();
+    const { client } = clientAndYoutube({
+      clientId: clientInformation?.client_id,
+      clientSecret: clientInformation?.client_secret,
+    });
     return {
       url: client.generateAuthUrl({
         access_type: 'offline',
@@ -165,8 +173,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     code: string;
     codeVerifier: string;
     refresh?: string;
-  }) {
-    const { client, oauth2 } = clientAndYoutube();
+  }, clientInformation?: { client_id?: string; client_secret?: string }) {
+    const { client, oauth2 } = clientAndYoutube({
+      clientId: clientInformation?.client_id,
+      clientSecret: clientInformation?.client_secret,
+    });
     const { tokens } = await client.getToken(params.code);
     client.setCredentials(tokens);
     const { scopes } = await client.getTokenInfo(tokens.access_token!);

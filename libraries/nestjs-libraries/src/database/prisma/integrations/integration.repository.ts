@@ -197,7 +197,8 @@ export class IntegrationRepository {
     isBetweenSteps = false,
     refresh?: string,
     timezone?: number,
-    customInstanceDetails?: string
+    customInstanceDetails?: string,
+    oauthAppId?: string
   ) {
     const postTimes = timezone
       ? {
@@ -233,6 +234,7 @@ export class IntegrationRepository {
         refreshNeeded: false,
         rootInternalId: internalId.split('_').pop(),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        ...(oauthAppId ? { oauthAppId } : {}),
         additionalSettings: additionalSettings
           ? JSON.stringify(additionalSettings)
           : '[]',
@@ -242,6 +244,7 @@ export class IntegrationRepository {
           ? { additionalSettings: JSON.stringify(additionalSettings) }
           : {}),
         ...(customInstanceDetails ? { customInstanceDetails } : {}),
+        ...(oauthAppId ? { oauthAppId } : {}),
         type: type as any,
         ...(!refresh
           ? {

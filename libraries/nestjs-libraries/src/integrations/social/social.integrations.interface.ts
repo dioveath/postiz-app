@@ -4,6 +4,7 @@ export interface ClientInformation {
   client_id: string;
   client_secret: string;
   instanceUrl: string;
+  oauthAppId?: string;
 }
 export interface IAuthenticator {
   authenticate(
