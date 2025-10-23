@@ -5,8 +5,11 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 export class OAuthAppRepository {
   constructor(private _oauthApp: PrismaRepository<'oAuthApp'>) {}
 
-  getOAuthAppsByProvider(orgId: string, providerIdentifier: string) {
-    return this._oauthApp.model.oAuthApp.findMany({
+  async getOAuthAppsByProvider(orgId: string, providerIdentifier: string) {
+    console.log('getOAuthAppsByProvider - orgId:', orgId, 'providerIdentifier:', providerIdentifier);
+    console.log('getOAuthAppsByProvider - _oauthApp:', this._oauthApp);
+    console.log('getOAuthAppsByProvider - model:', this._oauthApp?.model);
+    const result = await this._oauthApp.model.oAuthApp.findMany({
       where: { organizationId: orgId, providerIdentifier, deletedAt: null },
       orderBy: { createdAt: 'desc' },
       select: {
@@ -19,6 +22,8 @@ export class OAuthAppRepository {
         createdAt: true,
       },
     });
+    console.log('getOAuthAppsByProvider - query result:', result);
+    return result;
   }
 
   getOAuthAppById(id: string, orgId: string) {

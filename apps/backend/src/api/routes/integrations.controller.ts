@@ -40,6 +40,7 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { uniqBy } from 'lodash';
+import { Logger } from '@nestjs/common'
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -55,14 +56,47 @@ export class IntegrationsController {
     return this._integrationManager.getAllIntegrations();
   }
 
-  @Get('/:identifier/internal-plugs')
-  getInternalPlugs(@Param('identifier') identifier: string) {
-    return this._integrationManager.getInternalPlugs(identifier);
-  }
-
   @Get('/customers')
   getCustomers(@GetOrgFromRequest() org: Organization) {
     return this._integrationService.customers(org.id);
+  }
+
+  @Get('/oauth-apps')
+  async getOAuthApps(
+    @GetOrgFromRequest() org: Organization,
+    @Query('provider') provider?: string
+  ) {
+    Logger.log('getOAuthApps - org:', org?.id, 'provider:', provider);
+    const result = await this._oauthAppService.getOAuthAppsList(org.id, provider);
+    Logger.log('getOAuthApps - result:', result);
+    return result || [];
+  }
+
+  @Post('/oauth-apps')
+  async createOAuthApp(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: CreateOAuthAppDto
+  ) {
+    return this._oauthAppService.createOAuthApp(
+      org.id,
+      body.providerIdentifier,
+      body.name,
+      body.clientId,
+      body.clientSecret
+    );
+  }
+
+  @Delete('/oauth-apps/:id')
+  async deleteOAuthApp(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._oauthAppService.deleteOAuthApp(id, org.id);
+  }
+
+  @Get('/:identifier/internal-plugs')
+  getInternalPlugs(@Param('identifier') identifier: string) {
+    return this._integrationManager.getInternalPlugs(identifier);
   }
 
   @Put('/:id/group')
@@ -587,36 +621,6 @@ export class IntegrationsController {
         : undefined,
       selectedOauthAppId || undefined
     );
-  }
-
-  @Get('/oauth-apps')
-  async getOAuthApps(
-    @GetOrgFromRequest() org: Organization,
-    @Query('provider') provider?: string
-  ) {
-    return this._oauthAppService.getOAuthAppsList(org.id, provider);
-  }
-
-  @Post('/oauth-apps')
-  async createOAuthApp(
-    @GetOrgFromRequest() org: Organization,
-    @Body() body: CreateOAuthAppDto
-  ) {
-    return this._oauthAppService.createOAuthApp(
-      org.id,
-      body.providerIdentifier,
-      body.name,
-      body.clientId,
-      body.clientSecret
-    );
-  }
-
-  @Delete('/oauth-apps/:id')
-  async deleteOAuthApp(
-    @GetOrgFromRequest() org: Organization,
-    @Param('id') id: string
-  ) {
-    return this._oauthAppService.deleteOAuthApp(id, org.id);
   }
 
   @Post('/disable')

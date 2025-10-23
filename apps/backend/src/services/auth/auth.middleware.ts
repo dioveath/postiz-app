@@ -31,8 +31,10 @@ export class AuthMiddleware implements NestMiddleware {
     private _userService: UsersService
   ) {}
   async use(req: Request, res: Response, next: NextFunction) {
+    console.log('AuthMiddleware - path:', req.path, 'headers.auth:', !!req.headers.auth, 'cookies.auth:', !!req.cookies.auth);
     const auth = req.headers.auth || req.cookies.auth;
     if (!auth) {
+      console.log('AuthMiddleware - no auth token found');
       throw new HttpForbiddenException();
     }
     try {
@@ -97,7 +99,9 @@ export class AuthMiddleware implements NestMiddleware {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       req.org = setOrg;
+      console.log('AuthMiddleware - success, user:', user.id, 'org:', setOrg.id);
     } catch (err) {
+      console.log('AuthMiddleware - error:', err);
       throw new HttpForbiddenException();
     }
     next();

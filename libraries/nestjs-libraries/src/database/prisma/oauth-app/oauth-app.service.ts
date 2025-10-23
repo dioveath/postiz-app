@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OAuthAppRepository } from '@gitroom/nestjs-libraries/database/prisma/oauth-app/oauth-app.repository';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class OAuthAppService {
@@ -33,8 +34,11 @@ export class OAuthAppService {
   }
 
   async getOAuthAppsList(orgId: string, providerIdentifier?: string) {
+    Logger.log('getOAuthAppsList - orgId:', orgId, 'providerIdentifier:', providerIdentifier);
     if (providerIdentifier) {
-      return this._oauthRepo.getOAuthAppsByProvider(orgId, providerIdentifier);
+      const result = await this._oauthRepo.getOAuthAppsByProvider(orgId, providerIdentifier);
+      Logger.log('getOAuthAppsList - from repo:', result);
+      return result;
     }
     return (this._oauthRepo as any)._oauthApp.model.oAuthApp.findMany({
       where: { organizationId: orgId, deletedAt: null },

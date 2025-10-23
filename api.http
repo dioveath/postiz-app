@@ -1,0 +1,3 @@
+GET http://192.168.1.87:3000/integrations/oauth-apps?provider=youtube
+    Content-Type: application/json
+    Authorization: Bearer 2406091194c146040c7fbc0ca1cf9d9546192124de5f03aac2933241e696bce3

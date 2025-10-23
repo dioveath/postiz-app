@@ -32,10 +32,25 @@ export const OAuthAppSelector: FC<{
   const loadOAuthApps = useCallback(async () => {
     try {
       const response = await fetch(`/integrations/oauth-apps?provider=${provider}`);
-      const apps = await response.json();
-      setOAuthApps(apps);
+      console.log('OAuth apps response:', response);
+      if (!response.ok) {
+        console.error('Failed to load OAuth apps - HTTP error:', response.status);
+        setOAuthApps([]);
+        return;
+      }
+      const text = await response.text();
+      console.log('OAuth apps response text:', text);
+      if (!text || text.trim() === '') {
+        console.log('Empty response, using empty array');
+        setOAuthApps([]);
+        return;
+      }
+      const apps = JSON.parse(text);
+      console.log('Parsed OAuth apps:', apps);
+      setOAuthApps(Array.isArray(apps) ? apps : []);
     } catch (error) {
       console.error('Failed to load OAuth apps:', error);
+      setOAuthApps([]);
     } finally {
       setLoading(false);
     }
