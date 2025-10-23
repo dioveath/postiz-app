@@ -27,7 +27,7 @@ import { ContinueProvider } from '@gitroom/frontend/components/layout/continue.p
 // import { CopilotKit } from '@copilotkit/react-core';
 import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import clsx from 'clsx';
-import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
+// import { BillingComponent } from '@gitroom/frontend/components/billing/billing.component';
 import dynamic from 'next/dynamic';
 import { NewSubscription } from '@gitroom/frontend/components/layout/new.subscription';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -238,7 +238,7 @@ export const LayoutSettings = ({ children }: { children: ReactNode }) => {
                         </div>
                       )}
                     </div>
-                    <BillingComponent />
+                    {/* <BillingComponent /> */}
                   </>
                 ) : (
                   <>

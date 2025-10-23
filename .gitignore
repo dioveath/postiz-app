@@ -53,6 +53,9 @@ Thumbs.db
 *.orig
 *.~*~
 *.tsbuildinfo
+uploads
+*.log
+.turbo
 
 # ignore Secrets folder
 .secrets/

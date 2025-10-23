@@ -27,8 +27,9 @@ export const GET = (
     };
   }
 ) => {
+  const STORAGE_DIR = "/mnt/gdata/postiz-app/apps/backend/uploads"
   const filePath =
-    process.env.UPLOAD_DIRECTORY + '/' + context.params.path.join('/');
+    STORAGE_DIR + '/' + context.params.path.join('/');
   const response = createReadStream(filePath);
   const fileStats = statSync(filePath);
   const contentType = mime.getType(filePath) || 'application/octet-stream';

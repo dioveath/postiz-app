@@ -206,7 +206,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
 
-      const shortLinkUrl = dummy
+      const shortLinkUrl = true
         ? { ask: false }
         : await (
             await fetch('/posts/should-shortlink', {
