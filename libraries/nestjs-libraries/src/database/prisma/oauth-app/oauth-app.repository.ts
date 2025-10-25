@@ -6,9 +6,6 @@ export class OAuthAppRepository {
   constructor(private _oauthApp: PrismaRepository<'oAuthApp'>) {}
 
   async getOAuthAppsByProvider(orgId: string, providerIdentifier: string) {
-    console.log('getOAuthAppsByProvider - orgId:', orgId, 'providerIdentifier:', providerIdentifier);
-    console.log('getOAuthAppsByProvider - _oauthApp:', this._oauthApp);
-    console.log('getOAuthAppsByProvider - model:', this._oauthApp?.model);
     const result = await this._oauthApp.model.oAuthApp.findMany({
       where: { organizationId: orgId, providerIdentifier, deletedAt: null },
       orderBy: { createdAt: 'desc' },
@@ -22,7 +19,6 @@ export class OAuthAppRepository {
         createdAt: true,
       },
     });
-    console.log('getOAuthAppsByProvider - query result:', result);
     return result;
   }
 

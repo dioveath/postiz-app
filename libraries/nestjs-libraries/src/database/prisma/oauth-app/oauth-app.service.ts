@@ -34,10 +34,8 @@ export class OAuthAppService {
   }
 
   async getOAuthAppsList(orgId: string, providerIdentifier?: string) {
-    Logger.log('getOAuthAppsList - orgId:', orgId, 'providerIdentifier:', providerIdentifier);
     if (providerIdentifier) {
       const result = await this._oauthRepo.getOAuthAppsByProvider(orgId, providerIdentifier);
-      Logger.log('getOAuthAppsList - from repo:', result);
       return result;
     }
     return (this._oauthRepo as any)._oauthApp.model.oAuthApp.findMany({

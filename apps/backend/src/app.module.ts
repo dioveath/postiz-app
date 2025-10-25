@@ -1,4 +1,4 @@
-import { Global, Module, OnModuleInit } from '@nestjs/common';
+import { Global, MiddlewareConsumer, Module, NestModule, OnModuleInit } from '@nestjs/common';
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
 import { ApiModule } from '@gitroom/backend/api/api.module';
 import { APP_GUARD } from '@nestjs/core';
@@ -7,6 +7,7 @@ import { BullMqModule } from '@gitroom/nestjs-libraries/bull-mq-transport-new/bu
 import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { LoggerMiddleware } from '@gitroom/backend/services/logger.middleware';
 // import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
 import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.module';
 // import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
@@ -56,8 +57,12 @@ import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdpart
   ],
 })
 // export class AppModule {}
-export class AppModule implements OnModuleInit {
+export class AppModule implements OnModuleInit, NestModule {
   constructor() {}
+
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
 
   async onModuleInit() {
     // Placeholder for initializing default OAuth apps if needed; moved to a dedicated module/service if desired
