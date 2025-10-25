@@ -18,10 +18,10 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
 import { NotificationsRepository } from '@gitroom/nestjs-libraries/database/prisma/notifications/notifications.repository';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
-import { ItemUserRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.repository';
-import { ItemUserService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.service';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
-import { MessagesRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.repository';
+// import { ItemUserRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.repository';
+// import { ItemUserService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/item.user.service';
+// import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+// import { MessagesRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.repository';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 // import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 // import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
@@ -69,18 +69,18 @@ import { OAuthAppService } from '@gitroom/nestjs-libraries/database/prisma/oauth
     PostsService,
     PostsRepository,
     StripeService,
-    MessagesRepository,
+    // MessagesRepository,
     SignatureRepository,
     AutopostRepository,
     AutopostService,
     SignatureService,
     MediaService,
     MediaRepository,
-    ItemUserRepository,
+    // ItemUserRepository,
     AgenciesService,
     AgenciesRepository,
-    ItemUserService,
-    MessagesService,
+    // ItemUserService,
+    // MessagesService,
     IntegrationManager,
     // ExtractContentService,
     // OpenaiService,

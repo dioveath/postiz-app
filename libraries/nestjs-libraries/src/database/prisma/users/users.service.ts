@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users/users.repository';
 import { Provider } from '@prisma/client';
-import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
+// import { ItemsDto } from '@gitroom/nestjs-libraries/dtos/marketplace/items.dto';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 
@@ -36,17 +36,17 @@ export class UsersService {
     return this._usersRepository.updatePassword(id, password);
   }
 
-  changeAudienceSize(userId: string, audience: number) {
-    return this._usersRepository.changeAudienceSize(userId, audience);
-  }
+  // changeAudienceSize(userId: string, audience: number) {
+  //   return this._usersRepository.changeAudienceSize(userId, audience);
+  // }
 
-  changeMarketplaceActive(userId: string, active: boolean) {
-    return this._usersRepository.changeMarketplaceActive(userId, active);
-  }
+  // changeMarketplaceActive(userId: string, active: boolean) {
+  //   return this._usersRepository.changeMarketplaceActive(userId, active);
+  // }
 
-  getMarketplacePeople(orgId: string, userId: string, body: ItemsDto) {
-    return this._usersRepository.getMarketplacePeople(orgId, userId, body);
-  }
+  // getMarketplacePeople(orgId: string, userId: string, body: any) {
+  //   return this._usersRepository.getMarketplacePeople(orgId, userId, body);
+  // }
 
   getPersonal(userId: string) {
     return this._usersRepository.getPersonal(userId);

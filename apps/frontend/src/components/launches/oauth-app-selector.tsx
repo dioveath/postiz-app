@@ -167,7 +167,7 @@ export const OAuthAppSelector: FC<{
         <div className="mt-[20px] flex gap-[12px]">
           <Button
             type="button"
-            variant="outline"
+            secondary
             onClick={handleAddNew}
             className="flex-1"
           >
@@ -305,7 +305,7 @@ export const AddOAuthApp: FC<{
         <div className="mt-[24px] flex gap-[12px]">
           <Button
             type="button"
-            variant="outline"
+            secondary
             onClick={onCancel}
             className="flex-1"
           >

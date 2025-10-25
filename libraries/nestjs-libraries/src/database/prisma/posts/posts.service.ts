@@ -12,7 +12,7 @@ import { Integration, Post, Media, From } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { capitalize, shuffle, uniq } from 'lodash';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+// import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -52,7 +52,7 @@ export class PostsService {
     private _workerServiceProducer: BullMqClient,
     private _integrationManager: IntegrationManager,
     private _notificationService: NotificationService,
-    private _messagesService: MessagesService,
+    // private _messagesService: MessagesService,
     private _stripeService: StripeService,
     private _integrationService: IntegrationService,
     private _mediaService: MediaService,
@@ -758,74 +758,75 @@ export class PostsService {
       return;
     }
 
-    const findPrice = getPost.submittedForOrder.ordersItems.find(
-      (orderItem) => orderItem.integrationId === getPost.integrationId
-    )!;
+    // Marketplace functionality disabled
+    // const findPrice = getPost.submittedForOrder.ordersItems.find(
+    //   (orderItem) => orderItem.integrationId === getPost.integrationId
+    // )!;
 
-    await this._messagesService.createNewMessage(
-      getPost.submittedForOrder.messageGroupId,
-      From.SELLER,
-      '',
-      {
-        type: 'published',
-        data: {
-          id: getPost.submittedForOrder.id,
-          postId: id,
-          status: 'PUBLISHED',
-          integrationId: getPost.integrationId,
-          integration: getPost.integration.providerIdentifier,
-          picture: getPost.integration.picture,
-          name: getPost.integration.name,
-          url,
-        },
-      }
-    );
+    // await this._messagesService.createNewMessage(
+    //   getPost.submittedForOrder.messageGroupId,
+    //   From.SELLER,
+    //   '',
+    //   {
+    //     type: 'published',
+    //     data: {
+    //       id: getPost.submittedForOrder.id,
+    //       postId: id,
+    //       status: 'PUBLISHED',
+    //       integrationId: getPost.integrationId,
+    //       integration: getPost.integration.providerIdentifier,
+    //       picture: getPost.integration.picture,
+    //       name: getPost.integration.name,
+    //       url,
+    //     },
+    //   }
+    // );
 
-    const totalItems = getPost.submittedForOrder.ordersItems.reduce(
-      (all, p) => all + p.quantity,
-      0
-    );
-    const totalPosts = getPost.submittedForOrder.posts.length;
+    // const totalItems = getPost.submittedForOrder.ordersItems.reduce(
+    //   (all, p) => all + p.quantity,
+    //   0
+    // );
+    // const totalPosts = getPost.submittedForOrder.posts.length;
 
-    if (totalItems === totalPosts) {
-      await this._messagesService.completeOrder(getPost.submittedForOrder.id);
-      await this._messagesService.createNewMessage(
-        getPost.submittedForOrder.messageGroupId,
-        From.SELLER,
-        '',
-        {
-          type: 'order-completed',
-          data: {
-            id: getPost.submittedForOrder.id,
-            postId: id,
-            status: 'PUBLISHED',
-          },
-        }
-      );
-    }
+    // if (totalItems === totalPosts) {
+    //   await this._messagesService.completeOrder(getPost.submittedForOrder.id);
+    //   await this._messagesService.createNewMessage(
+    //     getPost.submittedForOrder.messageGroupId,
+    //     From.SELLER,
+    //     '',
+    //     {
+    //       type: 'order-completed',
+    //       data: {
+    //         id: getPost.submittedForOrder.id,
+    //         postId: id,
+    //         status: 'PUBLISHED',
+    //       },
+    //     }
+    //   );
+    // }
 
-    try {
-      await this._stripeService.payout(
-        getPost.submittedForOrder.id,
-        getPost.submittedForOrder.captureId!,
-        getPost.submittedForOrder.seller.account!,
-        findPrice.price
-      );
+    // try {
+    //   await this._stripeService.payout(
+    //     getPost.submittedForOrder.id,
+    //     getPost.submittedForOrder.captureId!,
+    //     getPost.submittedForOrder.seller.account!,
+    //     findPrice.price
+    //   );
 
-      return this._notificationService.inAppNotification(
-        getPost.integration.organizationId,
-        'Payout completed',
-        `You have received a payout of $${findPrice.price}`,
-        true
-      );
-    } catch (err) {
-      await this._messagesService.payoutProblem(
-        getPost.submittedForOrder.id,
-        getPost.submittedForOrder.seller.id,
-        findPrice.price,
-        id
-      );
-    }
+    //   return this._notificationService.inAppNotification(
+    //     getPost.integration.organizationId,
+    //     'Payout completed',
+    //     `You have received a payout of $${findPrice.price}`,
+    //     true
+    //   );
+    // } catch (err) {
+    //   await this._messagesService.payoutProblem(
+    //     getPost.submittedForOrder.id,
+    //     getPost.submittedForOrder.seller.id,
+    //     findPrice.price,
+    //     id
+    //   );
+    // }
   }
 
   async generatePostsDraft(orgId: string, body: CreateGeneratedPostsDto) {

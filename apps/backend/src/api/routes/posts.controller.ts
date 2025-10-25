@@ -16,7 +16,7 @@ import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto'
 import { StarsService } from '@gitroom/nestjs-libraries/database/prisma/stars/stars.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { ApiTags } from '@nestjs/swagger';
-import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
+// import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 // import { AgentGraphService } from '@gitroom/nestjs-libraries/agent/agent.graph.service';
@@ -30,9 +30,9 @@ import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/p
 @Controller('/posts')
 export class PostsController {
   constructor(
-    private _postsService: PostsService,
+    private _postsService: PostsService
     // private _starsService: StarsService,
-    private _messagesService: MessagesService,
+    // private _messagesService: MessagesService,
     // private _agentGraphService: AgentGraphService,
     // private _shortLinkService: ShortLinkService
   ) {}
@@ -51,13 +51,13 @@ export class PostsController {
     return;
   }
 
-  @Get('/marketplace/:id')
-  async getMarketplacePosts(
-    @GetOrgFromRequest() org: Organization,
-    @Param('id') id: string
-  ) {
-    return this._messagesService.getMarketplaceAvailableOffers(org.id, id);
-  }
+  // @Get('/marketplace/:id')
+  // async getMarketplacePosts(
+  //   @GetOrgFromRequest() org: Organization,
+  //   @Param('id') id: string
+  // ) {
+  //   return this._messagesService.getMarketplaceAvailableOffers(org.id, id);
+  // }
 
   @Post('/:id/comments')
   async createComment(
