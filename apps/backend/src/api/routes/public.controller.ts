@@ -19,7 +19,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { Request, Response } from 'express';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
-import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
+// import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
 import { Nowpayments } from '@gitroom/nestjs-libraries/crypto/nowpayments';
 import { Readable, pipeline } from 'stream';
 import { promisify } from 'util';

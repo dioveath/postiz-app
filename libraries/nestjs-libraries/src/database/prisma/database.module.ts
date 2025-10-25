@@ -23,8 +23,8 @@ import { ItemUserService } from '@gitroom/nestjs-libraries/database/prisma/marke
 import { MessagesService } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.service';
 import { MessagesRepository } from '@gitroom/nestjs-libraries/database/prisma/marketplace/messages.repository';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
-import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+// import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
+// import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { AgenciesService } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.service';
 import { AgenciesRepository } from '@gitroom/nestjs-libraries/database/prisma/agencies/agencies.repository';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
@@ -40,7 +40,7 @@ import { SetsRepository } from '@gitroom/nestjs-libraries/database/prisma/sets/s
 import { ThirdPartyRepository } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.repository';
 import { ThirdPartyService } from '@gitroom/nestjs-libraries/database/prisma/third-party/third-party.service';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
-import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
+// import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 import { OAuthAppRepository } from '@gitroom/nestjs-libraries/database/prisma/oauth-app/oauth-app.repository';
 import { OAuthAppService } from '@gitroom/nestjs-libraries/database/prisma/oauth-app/oauth-app.service';
 
@@ -82,9 +82,9 @@ import { OAuthAppService } from '@gitroom/nestjs-libraries/database/prisma/oauth
     ItemUserService,
     MessagesService,
     IntegrationManager,
-    ExtractContentService,
-    OpenaiService,
-    FalService,
+    // ExtractContentService,
+    // OpenaiService,
+    // FalService,
     EmailService,
     TrackService,
     ShortLinkService,

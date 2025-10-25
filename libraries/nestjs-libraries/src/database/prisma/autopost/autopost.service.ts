@@ -3,44 +3,44 @@ import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/au
 import { AutopostDto } from '@gitroom/nestjs-libraries/dtos/autopost/autopost.dto';
 import { BullMqClient } from '@gitroom/nestjs-libraries/bull-mq-transport-new/client';
 import dayjs from 'dayjs';
-import { END, START, StateGraph } from '@langchain/langgraph';
+// import { END, START, StateGraph } from '@langchain/langgraph';
 import { AutoPost, Integration } from '@prisma/client';
-import { BaseMessage } from '@langchain/core/messages';
+// import { BaseMessage } from '@langchain/core/messages';
 import striptags from 'striptags';
-import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
+// import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
 import { JSDOM } from 'jsdom';
 import { z } from 'zod';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
+// import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import Parser from 'rss-parser';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 const parser = new Parser();
 
-interface WorkflowChannelsState {
-  messages: BaseMessage[];
-  integrations: Integration[];
-  body: AutoPost;
-  description: string;
-  image: string;
-  id: string;
-  load: {
-    date: string;
-    url: string;
-    description: string;
-  };
-}
+// interface WorkflowChannelsState {
+//   messages: BaseMessage[];
+//   integrations: Integration[];
+//   body: AutoPost;
+//   description: string;
+//   image: string;
+//   id: string;
+//   load: {
+//     date: string;
+//     url: string;
+//     description: string;
+//   };
+// }
 
-const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-4.1',
-  temperature: 0.7,
-});
+// const model = new ChatOpenAI({
+//   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+//   model: 'gpt-4.1',
+//   temperature: 0.7,
+// });
 
-const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-image-1',
-});
+// const dalle = new DallEAPIWrapper({
+//   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+//   model: 'gpt-image-1',
+// });
 
 const generateContent = z.object({
   socialMediaPostContent: z
@@ -152,22 +152,22 @@ export class AutopostService {
     return { success: false };
   }
 
-  static state = () =>
-    new StateGraph<WorkflowChannelsState>({
-      channels: {
-        messages: {
-          reducer: (currentState, updateValue) =>
-            currentState.concat(updateValue),
-          default: () => [],
-        },
-        body: null,
-        description: null,
-        load: null,
-        image: null,
-        integrations: null,
-        id: null,
-      },
-    });
+  // static state = () =>
+  //   new StateGraph<WorkflowChannelsState>({
+  //     channels: {
+  //       messages: {
+  //         reducer: (currentState, updateValue) =>
+  //           currentState.concat(updateValue),
+  //         default: () => [],
+  //       },
+  //       body: null,
+  //       description: null,
+  //       load: null,
+  //       image: null,
+  //       integrations: null,
+  //       id: null,
+  //       },
+  //     });
 
   async loadUrl(url: string) {
     try {
@@ -185,7 +185,7 @@ export class AutopostService {
     }
   }
 
-  async generateDescription(state: WorkflowChannelsState) {
+  async generateDescription(state: any) { // WorkflowChannelsState
     if (!state.body.generateContent) {
       return {
         ...state,
@@ -202,54 +202,19 @@ export class AutopostService {
       };
     }
 
-    const structuredOutput = model.withStructuredOutput(generateContent);
-    const { socialMediaPostContent } = await ChatPromptTemplate.fromTemplate(
-      `
-        You are an assistant that gets raw 'description' of a content and generate a social media post content.
-        Rules:
-        - Maximum 100 chars
-        - Try to make it a short as possible to fit any social media
-        - Add line breaks between sentences (\\n) 
-        - Don't add hashtags
-        - Add emojis when needed
-        
-        'description':
-        {content}
-      `
-    )
-      .pipe(structuredOutput)
-      .invoke({
-        content: description,
-      });
-
+    // AI generation disabled - return empty description
     return {
       ...state,
-      description: socialMediaPostContent,
+      description: state.body.content || '',
     };
   }
 
-  async generatePicture(state: WorkflowChannelsState) {
-    const structuredOutput = model.withStructuredOutput(dallePrompt);
-    const { generatedTextToBeSentToDallE } =
-      await ChatPromptTemplate.fromTemplate(
-        `
-        You are an assistant that gets description and generate a prompt that will be sent to DallE to generate pictures.
-        
-        content:
-        {content}
-      `
-      )
-        .pipe(structuredOutput)
-        .invoke({
-          content: state.load.description || state.description,
-        });
-
-    const image = await dalle.invoke(generatedTextToBeSentToDallE);
-
-    return { ...state, image };
+  async generatePicture(state: any) { // WorkflowChannelsState
+    // AI generation disabled - return no image
+    return { ...state, image: null };
   }
 
-  async schedulePost(state: WorkflowChannelsState) {
+  async schedulePost(state: any) { // WorkflowChannelsState
     const nextTime = await this._postsService.findFreeDateTime(
       state.integrations[0].organizationId
     );
@@ -292,7 +257,7 @@ export class AutopostService {
     });
   }
 
-  async updateUrl(state: WorkflowChannelsState) {
+  async updateUrl(state: any) { // WorkflowChannelsState
     await this._autopostsRepository.updateUrl(state.id, state.load.url);
   }
 
@@ -322,36 +287,37 @@ export class AutopostService {
       return;
     }
 
-    const state = AutopostService.state();
-    const workflow = state
-      .addNode('generate-description', this.generateDescription.bind(this))
-      .addNode('generate-picture', this.generatePicture.bind(this))
-      .addNode('schedule-post', this.schedulePost.bind(this))
-      .addNode('update-url', this.updateUrl.bind(this))
-      .addEdge(START, 'generate-description')
-      .addConditionalEdges(
-        'generate-description',
-        (state: WorkflowChannelsState) => {
-          if (!state.description) {
-            return 'schedule-post';
-          }
-          if (state.body.addPicture) {
-            return 'generate-picture';
-          }
-          return 'schedule-post';
-        }
-      )
-      .addEdge('generate-picture', 'schedule-post')
-      .addEdge('schedule-post', 'update-url')
-      .addEdge('update-url', END);
+    // AI workflow disabled
+    // const state = AutopostService.state();
+    // const workflow = state
+    //   .addNode('generate-description', this.generateDescription.bind(this))
+    //   .addNode('generate-picture', this.generatePicture.bind(this))
+    //   .addNode('schedule-post', this.schedulePost.bind(this))
+    //   .addNode('update-url', this.updateUrl.bind(this))
+    //   .addEdge(START, 'generate-description')
+    //   .addConditionalEdges(
+    //     'generate-description',
+    //     (state: any) => {
+    //       if (!state.description) {
+    //         return 'schedule-post';
+    //       }
+    //       if (state.body.addPicture) {
+    //         return 'generate-picture';
+    //       }
+    //       return 'schedule-post';
+    //     }
+    //   )
+    //   .addEdge('generate-picture', 'schedule-post')
+    //   .addEdge('schedule-post', 'update-url')
+    //   .addEdge('update-url', END);
 
-    const app = workflow.compile();
-    await app.invoke({
-      messages: [],
-      id,
-      body: getPost,
-      load,
-      integrations: integrationsToSend,
-    });
+    // const app = workflow.compile();
+    // await app.invoke({
+    //   messages: [],
+    //   id,
+    //   body: getPost,
+    //   load,
+    //   integrations: integrationsToSend,
+    // });
   }
 }

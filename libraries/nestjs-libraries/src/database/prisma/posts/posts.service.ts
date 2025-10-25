@@ -33,7 +33,7 @@ import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+// import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
@@ -57,8 +57,8 @@ export class PostsService {
     private _integrationService: IntegrationService,
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
-    private _webhookService: WebhooksService,
-    private openaiService: OpenaiService
+    private _webhookService: WebhooksService
+    // private openaiService: OpenaiService
   ) {}
 
   checkPending15minutesBack() {
@@ -727,7 +727,9 @@ export class PostsService {
   }
 
   async separatePosts(content: string, len: number) {
-    return this.openaiService.separatePosts(content, len);
+    // AI service disabled - return content as single post
+    return [content];
+    // return this.openaiService.separatePosts(content, len);
   }
 
   async changeDate(orgId: string, id: string, date: string) {

@@ -8,12 +8,10 @@ import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerMiddleware } from '@gitroom/backend/services/logger.middleware';
-// import { AgentModule } from '@gitroom/nestjs-libraries/agent/agent.module';
 import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.module';
 // import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 // import { SentryModule } from '@sentry/nestjs/setup';
 // import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
-// import { ChatModule } from '@gitroom/nestjs-libraries/chat/chat.module';
 
 @Global()
 @Module({
@@ -23,10 +21,8 @@ import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdpart
     DatabaseModule,
     ApiModule,
     PublicApiModule,
-    // AgentModule,
     ThirdPartyModule,
     // VideoModule,
-    // ChatModule,
     ThrottlerModule.forRoot([
       {
         ttl: 3600000,
@@ -51,9 +47,7 @@ import { ThirdPartyModule } from '@gitroom/nestjs-libraries/3rdparties/thirdpart
     DatabaseModule,
     ApiModule,
     PublicApiModule,
-    // AgentModule,
     ThrottlerModule,
-    // ChatModule,
   ],
 })
 // export class AppModule {}

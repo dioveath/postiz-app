@@ -4,7 +4,7 @@ import { useMoveToIntegrationListener } from '@gitroom/frontend/components/launc
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import clsx from 'clsx';
 import Image from 'next/image';
-import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
+// import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { timer } from '@gitroom/helpers/utils/timer';
 export const PickPlatforms: FC<{
@@ -148,37 +148,37 @@ export const PickPlatforms: FC<{
       console.log('changed');
     });
   };
-  useCopilotReadable({
-    description: isMain
-      ? 'All available platforms channels'
-      : 'Possible platforms channels to edit',
-    value: JSON.stringify(integrations),
-  });
-  useCopilotAction(
-    {
-      name: isMain ? `addOrRemovePlatform` : 'setSelectedIntegration',
-      description: isMain
-        ? `Add or remove channels to schedule your post to, pass all the ids as array`
-        : 'Set selected integrations',
-      parameters: [
-        {
-          name: 'integrationsId',
-          type: 'string[]',
-          description: 'List of integrations id to set as selected',
-          required: true,
-        },
-      ],
-      handler,
-    },
-    [
-      addPlatform,
-      selectedAccounts,
-      integrations,
-      onChange,
-      props.singleSelect,
-      setSelectedAccounts,
-    ]
-  );
+  // useCopilotReadable({
+  //   description: isMain
+  //     ? 'All available platforms channels'
+  //     : 'Possible platforms channels to edit',
+  //   value: JSON.stringify(integrations),
+  // });
+  // useCopilotAction(
+  //   {
+  //     name: isMain ? `addOrRemovePlatform` : 'setSelectedIntegration',
+  //     description: isMain
+  //       ? `Add or remove channels to schedule your post to, pass all the ids as array`
+  //       : 'Set selected integrations',
+  //     parameters: [
+  //       {
+  //         name: 'integrationsId',
+  //         type: 'string[]',
+  //         description: 'List of integrations id to set as selected',
+  //         required: true,
+  //       },
+  //     ],
+  //     handler,
+  //   },
+  //   [
+  //     addPlatform,
+  //     selectedAccounts,
+  //     integrations,
+  //     onChange,
+  //     props.singleSelect,
+  //     setSelectedAccounts,
+  //   ]
+  // );
   if (hide) {
     return null;
   }

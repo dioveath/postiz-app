@@ -2,7 +2,7 @@ import {
   ThirdParty,
   ThirdPartyAbstract,
 } from '@gitroom/nestjs-libraries/3rdparties/thirdparty.interface';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+// import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { timer } from '@gitroom/helpers/utils/timer';
 
 @ThirdParty({
@@ -19,7 +19,7 @@ export class HeygenProvider extends ThirdPartyAbstract<{
   captions: string;
 }> {
   // @ts-ignore
-  constructor(private _openaiService: OpenaiService) {
+  constructor() { // private _openaiService: OpenaiService
     super();
   }
 
@@ -49,7 +49,7 @@ export class HeygenProvider extends ThirdPartyAbstract<{
 
   async generateVoice(apiKey: string, data: { text: string }) {
     return {
-      voice: await this._openaiService.generateVoiceFromText(data.text),
+      voice: null, // await this._openaiService.generateVoiceFromText(data.text),
     };
   }
 
