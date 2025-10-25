@@ -492,6 +492,10 @@ export class IntegrationsController {
       await ioRedis.del(`refresh:${body.state}`);
     }
 
+    const redisOauthAppKey = `oauthapp:${body.state}`;
+    const oauthAppIdFromRedis = await ioRedis.get(redisOauthAppKey);
+    let resolvedOauthAppId: string | undefined;
+
     const {
       error,
       accessToken,
@@ -504,16 +508,17 @@ export class IntegrationsController {
       additionalSettings,
       // eslint-disable-next-line no-async-promise-executor
     } = await new Promise<AuthTokenDetails>(async (res) => {
-      // Try to resolve oauthApp selection from Redis if present
-      const oauthAppId = await ioRedis.get(`oauthapp:${body.state}`);
-      if (oauthAppId) {
-        await ioRedis.del(`oauthapp:${body.state}`);
+      let clientInfo: any = details ? JSON.parse(details) : undefined;
+      if (clientInfo?.oauthAppId) {
+        resolvedOauthAppId = clientInfo.oauthAppId;
       }
 
-      let clientInfo: any = details ? JSON.parse(details) : undefined;
-      if (!clientInfo && oauthAppId) {
-        const app = await this._oauthAppService.getOAuthAppForAuth(oauthAppId);
+      if (!clientInfo && oauthAppIdFromRedis) {
+        const app = await this._oauthAppService.getOAuthAppForAuth(
+          oauthAppIdFromRedis
+        );
         if (app) {
+          resolvedOauthAppId = app.id;
           clientInfo = {
             client_id: app.clientId,
             client_secret: AuthService.fixedDecryption(app.clientSecret),
@@ -591,10 +596,11 @@ export class IntegrationsController {
     }
 
     // Thread through selected oauthAppId if was set
-    const selectedOauthAppId = await ioRedis.get(`oauthapp:${body.state}`);
-    if (selectedOauthAppId) {
-      await ioRedis.del(`oauthapp:${body.state}`);
+    if (oauthAppIdFromRedis) {
+      await ioRedis.del(redisOauthAppKey);
     }
+
+    const selectedOauthAppId = resolvedOauthAppId ?? oauthAppIdFromRedis;
 
     return this._integrationService.createOrUpdateIntegration(
       additionalSettings,
