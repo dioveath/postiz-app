@@ -2,10 +2,12 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import 'multer';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
+import { fileTypeFromBuffer } from 'file-type';
 // @ts-ignore
 import { getExtension } from 'mime';
 import { IUploadProvider } from './upload.interface';
 import axios from 'axios';
+import { Logger } from '@nestjs/common';
 
 class CloudflareStorage implements IUploadProvider {
   private _client: S3Client;
@@ -18,14 +20,25 @@ class CloudflareStorage implements IUploadProvider {
     private _bucketName: string,
     private _uploadUrl: string
   ) {
+    // this._client = new S3Client({
+    //   endpoint: `https://${accountID}.r2.cloudflarestorage.com`,
+    //   region,
+    //   credentials: {
+    //     accessKeyId: accessKey,
+    //     secretAccessKey: secretKey,
+    //   },
+    //   requestChecksumCalculation: 'WHEN_REQUIRED',
+    // });
+
     this._client = new S3Client({
-      endpoint: `https://${accountID}.r2.cloudflarestorage.com`,
-      region,
+      endpoint: `http://localhost:9000`,
+      region: 'us-east-1',
+      forcePathStyle: true,
       credentials: {
-        accessKeyId: accessKey,
-        secretAccessKey: secretKey,
+        accessKeyId: 'minioadmin',
+        secretAccessKey: 'minioadmin',
       },
-      requestChecksumCalculation: 'WHEN_REQUIRED',
+      requestChecksumCalculation: 'WHEN_REQUIRED'
     });
 
     this._client.middlewareStack.add(
@@ -58,6 +71,7 @@ class CloudflareStorage implements IUploadProvider {
   }
 
   async uploadSimple(path: string) {
+    Logger.log('uploadSimple: ' + path);
     const loadImage = await fetch(path);
     const contentType =
       loadImage?.headers?.get('content-type') ||
@@ -80,9 +94,15 @@ class CloudflareStorage implements IUploadProvider {
   }
 
   async uploadFile(file: Express.Multer.File): Promise<any> {
+    Logger.log('uploadFile: ' + file.originalname);
     try {
       const id = makeId(10);
-      const extension = mime.extension(file.mimetype) || '';
+      const fileType = await fileTypeFromBuffer(new Uint8Array(file.buffer));
+      const mimeType = fileType?.mime || file.mimetype;
+      const extension = mime.extension(mimeType) || '';
+
+      Logger.log('mimeType: ' + mimeType);
+      Logger.log('extension: ' + extension);
 
       // Create the PutObjectCommand to upload the file to Cloudflare R2
       const command = new PutObjectCommand({
@@ -96,7 +116,7 @@ class CloudflareStorage implements IUploadProvider {
 
       return {
         filename: `${id}.${extension}`,
-        mimetype: file.mimetype,
+        mimetype: mimeType,
         size: file.size,
         buffer: file.buffer,
         originalname: `${id}.${extension}`,

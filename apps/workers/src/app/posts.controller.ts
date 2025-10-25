@@ -3,6 +3,7 @@ import { EventPattern, Transport } from '@nestjs/microservices';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
+import { Logger } from '@nestjs/common';
 
 @Controller()
 export class PostsController {
@@ -14,7 +15,7 @@ export class PostsController {
 
   @EventPattern('post', Transport.REDIS)
   async post(data: { id: string }) {
-    console.log('processing', data);
+    Logger.log('Processing post', JSON.stringify(data, null, 2));
     try {
       return await this._postsService.post(data.id);
     } catch (err) {

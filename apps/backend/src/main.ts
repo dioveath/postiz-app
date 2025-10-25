@@ -21,7 +21,6 @@ async function bootstrap() {
   Logger.log("FRONTEND_URL:" + process.env.FRONTEND_URL)
   Logger.log("MAIN_URL:" + process.env.MAIN_URL)
 
-
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {
