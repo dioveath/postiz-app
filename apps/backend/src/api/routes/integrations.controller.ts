@@ -50,7 +50,7 @@ export class IntegrationsController {
     private _integrationService: IntegrationService,
     private _postService: PostsService,
     private _oauthAppService: OAuthAppService
-  ) {}
+  ) { }
   @Get('/')
   getIntegration() {
     return this._integrationManager.getAllIntegrations();
@@ -193,18 +193,18 @@ export class IntegrationsController {
 
     const { url } = manager.changeProfilePicture
       ? await manager.changeProfilePicture(
-          integration.internalId,
-          integration.token,
-          body.picture
-        )
+        integration.internalId,
+        integration.token,
+        body.picture
+      )
       : { url: '' };
 
     const { name } = manager.changeNickname
       ? await manager.changeNickname(
-          integration.internalId,
-          integration.token,
-          body.name
-        )
+        integration.internalId,
+        integration.token,
+        body.name
+      )
       : { name: '' };
 
     return this._integrationService.updateNameAndUrl(id, name, url);
@@ -251,9 +251,9 @@ export class IntegrationsController {
     try {
       const getExternalUrl = integrationProvider.externalUrl
         ? {
-            ...(await integrationProvider.externalUrl(externalUrl)),
-            instanceUrl: externalUrl,
-          }
+          ...(await integrationProvider.externalUrl(externalUrl)),
+          instanceUrl: externalUrl,
+        }
         : undefined;
 
       // If oauthAppId provided, fetch and pass credentials to generateAuthUrl
@@ -419,7 +419,7 @@ export class IntegrationsController {
               accessToken,
               refreshToken,
               expiresIn
-            ,
+              ,
               undefined,
               false,
               undefined,
@@ -492,6 +492,8 @@ export class IntegrationsController {
       await ioRedis.del(`refresh:${body.state}`);
     }
 
+    let selectedOauthAppId: string | null = null;
+
     const {
       error,
       accessToken,
@@ -507,6 +509,7 @@ export class IntegrationsController {
       // Try to resolve oauthApp selection from Redis if present
       const oauthAppId = await ioRedis.get(`oauthapp:${body.state}`);
       if (oauthAppId) {
+        selectedOauthAppId = oauthAppId;
         await ioRedis.del(`oauthapp:${body.state}`);
       }
 
@@ -556,6 +559,10 @@ export class IntegrationsController {
       return res(auth);
     });
 
+    if (selectedOauthAppId) {
+      await ioRedis.del(`oauthapp:${body.state}`);
+    }
+
     if (error) {
       throw new NotEnoughScopes(error);
     }
@@ -590,12 +597,6 @@ export class IntegrationsController {
       throw new HttpException('', 412);
     }
 
-    // Thread through selected oauthAppId if was set
-    const selectedOauthAppId = await ioRedis.get(`oauthapp:${body.state}`);
-    if (selectedOauthAppId) {
-      await ioRedis.del(`oauthapp:${body.state}`);
-    }
-
     return this._integrationService.createOrUpdateIntegration(
       additionalSettings,
       !!integrationProvider.oneTimeToken,
@@ -615,10 +616,10 @@ export class IntegrationsController {
       details
         ? AuthService.fixedEncryption(details)
         : integrationProvider.customFields
-        ? AuthService.fixedEncryption(
+          ? AuthService.fixedEncryption(
             Buffer.from(body.code, 'base64').toString()
           )
-        : undefined,
+          : undefined,
       selectedOauthAppId || undefined
     );
   }
